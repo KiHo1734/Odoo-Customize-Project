@@ -41,4 +41,4 @@ for details and get in touch with us via email.
 Odoo เวอร์ชั่นนี้เป็นเวอร์ชันที่ผมทำการ Fork มาจาก odoo Github เพื่อนำมา Customize ตาม Requirements ที่ได้รับมอบหมาย โดย Github ของ Project นี้
 จะไม่เชื่อมโยงกับ Project ของ Odoo หลัก [Github ของ Odoo ที่ผม Fork](https://github.com/odoo/odoo)
 
-[คู่มือการตั้งค่าหลังจกาทำการ Pull Project](README.TH.md)
+[คู่มือการตั้งค่าหลังจกาทำการ Pull Project](README.th.md)
