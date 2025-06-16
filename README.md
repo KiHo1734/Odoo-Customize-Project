@@ -35,3 +35,10 @@ Developers can start with [the developer tutorials](https://www.odoo.com/documen
 
 If you believe you have found a security issue, check our [Responsible Disclosure page](https://www.odoo.com/security-report)
 for details and get in touch with us via email.
+
+## Customize Version (เนื้อหานี้เป็นเนื้อหาที่ถูกเพิ่มเข้ามา)
+
+Odoo เวอร์ชั่นนี้เป็นเวอร์ชันที่ผมทำการ Fork มาจาก odoo Github เพื่อนำมา Customize ตาม Requirements ที่ได้รับมอบหมาย โดย Github ของ Project นี้
+จะไม่เชื่อมโยงกับ Project ของ Odoo หลัก [Github ของ Odoo ที่ผม Fork](https://github.com/odoo/odoo)
+
+[คู่มือการตั้งค่าหลังจกาทำการ Pull Project](README.TH.md)
