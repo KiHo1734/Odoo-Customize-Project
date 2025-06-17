@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_employee_form_custom" model="ir.ui.view">
+        <field name="name">hr.employee.form.custom</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form" />
+
+        <!-- ส่วนนี้เป็นส่วนที่ใช้ในการเพิ่ม Fields โดยเพิ่มต่อจากตัว Xpath ของ Core Module -->
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='work_phone']" position="after"> 
+                <field name="salary"/>
+            </xpath>
+            <xpath expr="//field[@name='job_id']" position="after">
+                <field name="start_date"/>
+                <field name="position_change_date"/>
+                <field name="retirement_date"/>
+            </xpath>
+        </field>
+
+    </record>
+</odoo>
