@@ -38,9 +38,9 @@
       ```
       เพื่อติดตั้ง venv สำหรับจัดการ Python libraries หรือ Packages ต่าง ๆ
       
-   3. ใช้คำสั่ง venv\Scripts\activate เพื่อใช้งาน venv environtment
+   3. ใช้คำสั่ง  ```bash venv\Scripts\activate ``` เพื่อใช้งาน venv environtment
 
-   4. ใช้คำสั่ง pip install -r requirements.txt เพื่อติดตัง Dependencies ที่จำเป็นทั้งหมดจาก requirements.txt
+   4. ใช้คำสั่ง ```bash pip install -r requirements.txt ``` เพื่อติดตัง Dependencies ที่จำเป็นทั้งหมดจาก requirements.txt ลงใน venv environtment
 
    ## คำสั่งเพิ่มเติม (**ทุกครั้งที่ใช้คำสั่งใด ๆ ก็ตามแนะนำให้ใช้บน venv environtment**)
    ### อัปเดตโมดูล (ใช้ตอนสร้างหรืออัปเดต Custom Modules)
