@@ -12,11 +12,12 @@
 
       ```bash
       python odoo-bin -c odoo.conf --save
+      ```
       
       --save จะสร้าง odoo.conf อัตโนมัติ หากยังไม่มี [ตัวอย่างไฟล์ odoo.conf](odoo.conf.example)
 
       แล้วทำการแก้ไขข้อมูลที่ต้องใช้ เช่น db_user และ db_password (odoo ใช้ PostgreSQL เป็นหลัก)
-      
+
       ```ini
       [options]
       addons_path = addons,customs/addons
@@ -27,14 +28,14 @@
       db_password = 1234  <----- แก้ db_user
       logfile = odoo.log
       xmlrpc_port = 8069
-
+      ```
       ถ้าไม่เข้าใจไปดู Slide นี้เป็นแนวทางได้คร่าว ๆ [อันนี้เป็น Slide ที่ผมทำตอนเริ่มศึกษา odoo ช่วงแรก ๆ](https://www.canva.com/design/DAGmvvM3Wvw/CSePN35W6QotP6aFMvcRjg/edit?utm_content=DAGmvvM3Wvw&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
       
    2. การติดตั้ง Enviroment เพื่อใช้งาน Odoo ใช้คำสั่ง
 
       ```bash
       py -m venv venv
-
+      ```
       เพื่อติดตั้ง venv สำหรับจัดการ Python libraries หรือ Packages ต่าง ๆ
       
    3. ใช้คำสั่ง venv\Scripts\activate เพื่อใช้งาน venv environtment
