@@ -5,8 +5,8 @@
         <field name="model">hr.employee</field>
         <field name="inherit_id" ref="hr.view_employee_form" />
 
-        <!-- ส่วนนี้เป็นส่วนที่ใช้ในการเพิ่ม Fields โดยเพิ่มต่อจากตัว Xpath ของ Core Module -->
         <field name="arch" type="xml">
+            <!-- ส่วนนี้เป็นส่วนที่ใช้ในการเพิ่ม Fields โดยเพิ่มต่อจากตัว Xpath ของ Core Module -->
             <xpath expr="//field[@name='work_phone']" position="after"> 
                 <field name="salary"/>
             </xpath>
@@ -14,6 +14,20 @@
                 <field name="start_date"/>
                 <field name="position_change_date"/>
                 <field name="retirement_date"/>
+            </xpath>
+
+            <!-- ส่วนนี้เป็นส่วนที่ใช้ในการเพิ่ม Postion History Module ทีสร้างเอง โดยเพิ่มต่อจากตัว Xpath ของ Core Module -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Position History">
+                    <field name="position_history">
+                        <list editable="bottom">
+                            <field name="job_id"/>
+                            <field name="department_id"/>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                        </list>
+                    </field>
+                </page>
             </xpath>
         </field>
 
