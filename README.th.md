@@ -16,7 +16,8 @@
       --save จะสร้าง odoo.conf อัตโนมัติ หากยังไม่มี [ตัวอย่างไฟล์ odoo.conf](odoo.conf.example)
 
       แล้วทำการแก้ไขข้อมูลที่ต้องใช้ เช่น db_user และ db_password (odoo ใช้ PostgreSQL เป็นหลัก)
-      ```bash
+      
+      ```ini
       [options]
       addons_path = addons,customs/addons
       admin_passwd = admin
@@ -40,11 +41,11 @@
 
    4. ใช้คำสั่ง pip install -r requirements.txt เพื่อติดตัง Dependencies ที่จำเป็นทั้งหมดจาก requirements.txt
 
-   ### คำสั่งเพิ่มเติม (***ทุกครั้งที่ใช้คำสั่งใด ๆ ก็ตามแนะนำให้ใช้บน venv environtment***)
-   # อัปเดตโมดูล (ใช้ตอนสร้างหรืออัปเดต Custom Modules)
+   ## คำสั่งเพิ่มเติม (***ทุกครั้งที่ใช้คำสั่งใด ๆ ก็ตามแนะนำให้ใช้บน venv environtment***)
+   ### อัปเดตโมดูล (ใช้ตอนสร้างหรืออัปเดต Custom Modules)
    python odoo-bin -u <ชื่อโมดูลที่สร้าง> -d <ชื่อฐานข้อมูล>
 
-   ##### โครงสร้างในการสร้างไฟล์ Custom modules
+   ## โครงสร้างในการสร้างไฟล์ Custom modules
       customs/                               ← โฟลเดอร์หลักสำหรับเก็บ custom modules ทั้งหมด 
          └── addons/                         ← โฟลเดอร์สำหรับใส่ custom modules แต่ละตัว
             └── custom_hr_employee/          ← โมดูลสำหรับปรับแต่ง hr.employee (modules ที่เราสร้างเพิ่ม) ✅
