@@ -9,7 +9,8 @@
     ],
     'assets': {
         'web.assets_backend': [
-             'custom_hr_employee/static/src/scss/employee_style.scss',
+            'custom_hr_employee/static/src/js/position_history.js',
+            'custom_hr_employee/static/src/scss/position_history.scss',
         ],
     },
     'installable': True,
