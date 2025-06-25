@@ -6,6 +6,7 @@
         'views/hr_employee_view.xml',
         'views/position_history_view.xml',
         'security/ir.model.access.csv', 
+        'views/hr_private_info_view.xml',
     ],
     'assets': {
         'web.assets_backend': [
