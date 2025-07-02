@@ -14,13 +14,28 @@ class HrPersonalCardExtract(models.Model):
     id_card_image = fields.Binary(string='ID Card Image', attachment=False)
     religion = fields.Char(string="Religion")
 
-    identification_id_encrypted = fields.Char(string="Encrypted ID", readonly=True, store=True)
+    identification_id_encrypted = fields.Char(store=True)
 
     identification_id = fields.Char(
         string="ID Number",
         compute="_compute_identification_id",
-        store=False  
+        inverse="_inverse_identification_id",
+        store=False,
     )
+
+    # read เป็น function พื้นฐานของ odoo ที่จะเรียกใช้อัติโนมัติ โดยในส่วนจะใช้สำหรับการ Decryption
+    def read(self, fields=None, load='_classic_read'):
+        res = super().read(fields, load)
+        if not fields or 'identification_id' in fields:
+            for record, val in zip(self, res):
+                if record.identification_id_encrypted:
+                    try:
+                        fernet = record._get_or_create_fernet()
+                        val['identification_id'] = fernet.decrypt(record.identification_id_encrypted.encode()).decode()
+                    except Exception:
+                        val['identification_id'] = False
+        return res
+
 
     def _get_or_create_fernet(self):
         Param = self.env['ir.config_parameter'].sudo()
@@ -36,13 +51,19 @@ class HrPersonalCardExtract(models.Model):
             if rec.identification_id_encrypted:
                 try:
                     fernet = rec._get_or_create_fernet()
-                    decrypted = fernet.decrypt(rec.identification_id_encrypted.encode()).decode()
-                    rec.identification_id = decrypted
-                except Exception:
+                    rec.identification_id = fernet.decrypt(rec.identification_id_encrypted.encode()).decode()
+                except:
                     rec.identification_id = False
             else:
                 rec.identification_id = False
 
+    def _inverse_identification_id(self):
+        for rec in self:
+            if rec.identification_id:
+                fernet = rec._get_or_create_fernet()
+                rec.identification_id_encrypted = fernet.encrypt(rec.identification_id.encode()).decode()
+            else:
+                rec.identification_id_encrypted = False
 
     @api.onchange('id_card_image')
     def _onchange_id_card_image(self):
