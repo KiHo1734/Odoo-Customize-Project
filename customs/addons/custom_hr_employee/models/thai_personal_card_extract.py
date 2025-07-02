@@ -1,18 +1,49 @@
 import datetime
 from odoo import models, fields, api
 from ThaiPersonalCardExtract import PersonalCard
+from ThaiPersonalCardExtract.utils import Language
 import base64
 import tempfile
 from odoo.exceptions import UserError
 import unicodedata
-import datetime
+from cryptography.fernet import Fernet
 
 class HrPersonalCardExtract(models.Model):
     _inherit = 'hr.employee'
 
     id_card_image = fields.Binary(string='ID Card Image', attachment=False)
     religion = fields.Char(string="Religion")
+
+    identification_id_encrypted = fields.Char(string="Encrypted ID", readonly=True, store=True)
+
+    identification_id = fields.Char(
+        string="ID Number",
+        compute="_compute_identification_id",
+        store=False  
+    )
+
+    def _get_or_create_fernet(self):
+        Param = self.env['ir.config_parameter'].sudo()
+        key = Param.get_param('personal_card_fernet_key')
+        if not key:
+            key = Fernet.generate_key().decode()
+            Param.set_param('personal_card_fernet_key', key)
+        return Fernet(key.encode())
     
+    @api.depends('identification_id_encrypted')
+    def _compute_identification_id(self):
+        for rec in self:
+            if rec.identification_id_encrypted:
+                try:
+                    fernet = rec._get_or_create_fernet()
+                    decrypted = fernet.decrypt(rec.identification_id_encrypted.encode()).decode()
+                    rec.identification_id = decrypted
+                except Exception:
+                    rec.identification_id = False
+            else:
+                rec.identification_id = False
+
+
     @api.onchange('id_card_image')
     def _onchange_id_card_image(self):
         if self.id_card_image:
@@ -74,22 +105,32 @@ class HrPersonalCardExtract(models.Model):
 
         try:
             reader = PersonalCard(
-                lang="tha",
+                lang=Language.MIX,
                 tesseract_cmd=self._get_tesseract_cmd()
             )
-            result = reader.extractInfo(temp_path)
+            
+            result = reader.extract_front_info(temp_path)
 
-            self.name = getattr(result, "th_name", result.FullNameTH)
-            self.identification_id = getattr(result, "card_id", result.Identification_Number)
-            self.religion = getattr(result, " religion", result.Religion)
+            id_number = getattr(result, "card_id", result.Identification_Number)
+            fernet = self._get_or_create_fernet()
+            self.identification_id_encrypted = fernet.encrypt(id_number.encode()).decode()
 
+            self.name = getattr(result, "en_name", (result.NameEN or "") + " " + (result.LastNameEN or ""))
+            self.religion = getattr(result, "religion", result.Religion)
 
             birth_raw = getattr(result, "birth_date", None) or getattr(result, "BirthdayTH", None)
             birth_date = self.thai_date_to_date(birth_raw) if birth_raw else None
             if birth_date:
                 self.birthday = birth_date
-            print("RawDate :", birth_raw)
-            print("FormattDate :", birth_date)
+
+            self.private_street = getattr(result, "private_street", (result.HouseNumber or "") + " " + (result.Road or ""))
+            self.private_street2 = getattr(result, "private_street2", result.Subdistrict)
+            self.private_city = getattr(result, "district", result.District)
+            self.private_state_id = getattr(result, "province", result.Province)
+
+            country = self.env.ref('base.th') 
+            self.country_id = country
+            self.private_country_id = country
         except Exception as e:
             raise UserError(f"อ่านข้อมูลจากภาพไม่สำเร็จ: {e}")
         finally:
