@@ -3,12 +3,18 @@ from odoo import models, fields, api
 class HrEmployee(models.Model):
     _inherit = 'hr.employee'
 
-    salary = fields.Monetary(string='Salary')
+    salary = fields.Monetary(string='Salary', currency_field='currency_id')
     start_date = fields.Date(string='Start Date')
     retirement_date = fields.Date(string='Retirement Date')
     position_change_date = fields.Date(string='Position Change Date')
     end_date = fields.Date(string='End Date') 
-    
+
+    currency_id = fields.Many2one(
+        'res.currency',
+        string="Currency",
+        default=lambda self: self.env.company.currency_id
+    )
+
     position_history_ids = fields.One2many(
         'hr.position.history',  
         'employee_id',          

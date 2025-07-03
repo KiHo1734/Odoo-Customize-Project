@@ -5,7 +5,7 @@
     <field name="name">Position History Timeline</field>
     <field name="model">hr.position.history</field>
     <field name="arch" type="xml">
-      <kanban class="o_position_resume_view o_kanban_vertical" default_order="start_date desc, id desc">
+      <kanban class="o_position_resume_view o_kanban_vertical" default_order="start_date desc, id desc" create="false">
         <field name="job_id"/>
         <field name="start_date"/>
         <field name="end_date"/>
