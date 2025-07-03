@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <!-- Kanban View with custom template -->
+  <record id="custom_position_history_kanban" model="ir.ui.view">
+    <field name="name">Position History Timeline</field>
+    <field name="model">hr.position.history</field>
+    <field name="arch" type="xml">
+      <kanban class="o_position_resume_view o_kanban_vertical" default_order="start_date desc, id desc" create="false">
+        <field name="job_id"/>
+        <field name="start_date"/>
+        <field name="end_date"/>
+        <field name="department_id"/>
+        <templates>
+          <t t-name="card">
+            <div class="oe_kanban_card d-flex position-relative">
+              <!-- ปุ่มลบ -->
+              <div class="position-absolute top-0 end-0">
+                <a type="delete"
+                  class="btn btn-sm text-danger oe_kanban_action oe_kanban_action_delete"
+                  title="Delete">
+                  <i class="fa fa-trash"/>
+                </a>
+              </div>
+              <!-- Dot + Line -->
+              <div class="timeline-dot-container" style="width: 16px;">
+                <div class="dot rounded-circle"></div>
+              </div>
+              <!-- Main Content -->
+              <div class="ps-3">
+                <div class="text-muted fw-bold" style="font-size: 13px;">
+                  <t t-esc="record.start_date.value"/> – 
+                  <t t-if="record.end_date"><t t-esc="record.end_date.value"/></t>
+                  <t t-if="!record.end_date">Current</t>
+                </div>
+                <div class="fw-bold" style="font-size: 17px;">
+                  <t t-esc="record.job_id.value"/>
+                </div>
+                <div class="text-muted" style="font-size: 14px;">
+                  <t t-esc="record.department_id.value"/>
+                </div>
+              </div>
+            </div>
+          </t>
+        </templates>
+      </kanban>
+    </field>
+  </record>
+</odoo>

@@ -1,0 +1,54 @@
+.o_position_resume_view .timeline-line {
+  background-color: #00acc1;
+  width: 2px;
+  position: absolute;
+  top: 0;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+}
+
+.o_position_resume_view .dot {
+  width: 10px;
+  height: 10px;
+  background-color: #00acc1;
+  z-index: 1;
+}
+
+.o_kanban_vertical .o_kanban_record {
+  width: 100% !important;
+  margin-bottom: 12px;
+  height: fit-content;
+}
+.o_kanban_vertical .oe_kanban_card {
+  display: flex;
+  align-items: flex-start;
+}
+
+.o_kanban_vertical .timeline-dot-container {
+  position: relative;
+}
+
+.o_kanban_vertical .timeline-dot-container::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 4px;
+  width: 1px;
+  height: calc(100% + 75px); 
+  background-color: #00acc1;
+  z-index: 1;
+}
+
+.o_kanban_renderer .o_kanban_record:not(.o_legacy_kanban_record):not(.o_kanban_ghost) {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.o_position_resume_view .oe_kanban_card:hover {
+  background-color: #f0f8fa; /* light blue background */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* soft shadow */
+  border-radius: 6px;
+  transition: all 0.2s ease-in-out;
+}

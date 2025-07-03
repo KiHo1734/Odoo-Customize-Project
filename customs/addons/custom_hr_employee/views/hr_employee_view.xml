@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_employee_form_custom" model="ir.ui.view">
+        <field name="name">hr.employee.form.custom</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form" />
+        <field name="arch" type="xml">
+            <!-- ส่วนนี้เป็นส่วนที่ใช้ในการเพิ่ม Fields โดยเพิ่มต่อจากตัว Xpath ของ Core Module -->
+            <xpath expr="//field[@name='work_phone']" position="after"> 
+                <field name="salary" options="{'currency_field': 'currency_id'}"/>
+            </xpath>
+            <xpath expr="//field[@name='salary']" position="after">
+                <field name="currency_id" invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='job_id']" position="after">
+                <field name="start_date"/>
+                <field name="position_change_date"/>
+                <field name="retirement_date"/>
+            </xpath>
+            <!-- ส่วนนี้เป็นส่วนที่ใช้ในการเพิ่ม Postion History Module ทีสร้างเอง โดยเพิ่มต่อจากตัว Xpath ของ Core Module -->
+           <xpath expr="//notebook" position="inside">
+                <page string="Position History">
+                   <field 
+                        name="position_history_ids" 
+                        mode="kanban" 
+                        context=
+                        "{
+                            'kanban_view_ref': 'custom_hr_employee.custom_position_history_kanban',
+                            'default_order': 'start_date desc, id desc'
+                        }"
+                        options="{'no_create': True}"
+                    />
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
