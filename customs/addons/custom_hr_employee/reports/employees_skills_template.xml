@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <template id="employees_skills_template">
+    <t t-call="web.basic_layout">
+      <t t-set="docs" t-value="docs"/>
+      <div class="page">
+        <h2 style="text-align:center;">Employee Skills by Employee</h2>
+        <t t-set="employees" t-value="docs.mapped('employee_id').sorted(key=lambda e: e.name)"/>
+        <t t-foreach="employees" t-as="employee">
+          <h3><t t-esc="employee.name"/></h3>
+          <table class="table table-sm table-hover o_main_table" style="margin-bottom: 20px;">
+            <thead>
+              <tr>
+                <th>Department</th>
+                <th>Skill Type</th>
+                <th>Skill</th>
+                <th>Level</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filter docs to show only skills of current employee -->
+              <t t-foreach="docs.filtered(lambda s: s.employee_id.id == employee.id)" t-as="skill">
+                <tr>
+                  <td><t t-esc="skill.employee_department_id.display_name"/></td>
+                  <td><t t-esc="skill.skill_type_id.name"/></td>
+                  <td><t t-esc="skill.skill_id.name"/></td>
+                  <td><t t-esc="skill.skill_level_id.name"/></td>
+                </tr>
+              </t>
+            </tbody>
+          </table>
+        </t>
+      </div>
+    </t>
+  </template>
+</odoo>

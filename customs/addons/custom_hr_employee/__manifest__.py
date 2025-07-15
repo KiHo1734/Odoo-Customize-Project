@@ -1,7 +1,7 @@
 {
     'name': 'HR Employee Customization',
     'version': '1.0',
-    'depends': ['hr'],
+    'depends': ['hr', 'hr_skills'],
     'data': [
         'views/hr_employee_detail_view.xml',
         'views/position_history_view.xml',
@@ -9,6 +9,10 @@
         'views/hr_private_info_view.xml',
         'reports/employees_property_report.xml',
         'reports/employees_property_template.xml',
+        'views/employee_skill_search.xml',
+        'views/employee_skill_graph_view.xml',
+        'reports/employees_skills_report.xml',
+        'reports/employees_skills_template.xml',
     ],
     'assets': {
         'web.assets_backend': [

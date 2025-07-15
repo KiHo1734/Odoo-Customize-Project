@@ -1,0 +1,50 @@
+<!-- views/employee_skill_graph_view.xml -->
+<odoo>
+    <record id="view_employee_skill_graph" model="ir.ui.view">
+        <field name="name">hr.employee.skill.graph</field>
+        <field name="model">hr.employee.skill</field>
+        <field name="arch" type="xml">
+            <graph string="Employee Skills by Level" type="bar" stacked="True">
+                <field name="id" type="measure"/>
+                <field name="employee_department_id" groupby="True"/>
+                <field name="skill_type_id" groupby="True"/>
+            </graph>    
+        </field>
+    </record>
+
+    <!-- ตาราง Table ตอนกดเข้ามาดูกราฟ -->
+    <record id="view_employee_skill_list" model="ir.ui.view">
+        <field name="name">hr.employee.skill.list</field>
+        <field name="model">hr.employee.skill</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="employee_id"/>
+                <field name="employee_department_id"/>
+                <field name="skill_type_id"/>
+                <field name="skill_id"/>
+                <field name="skill_level_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- action ที่จะเปิด view -->
+    <record id="action_employee_skill_graph" model="ir.actions.act_window">
+        <field name="name">Skill Graph</field>
+        <field name="res_model">hr.employee.skill</field>
+
+        <!-- ใส่ list ต่อจาก graph -->
+        <field name="view_mode">graph,list</field>
+
+        <!-- อ้าง view graph + list ของเรา -->
+        <field name="views"
+            eval="[(ref('view_employee_skill_graph'), 'graph'),
+                    (ref('view_employee_skill_list'),  'list')]"/>
+
+        <field name="domain">[('employee_id.active','=', True)]</field>
+    </record>
+
+    <menuitem id="menu_employee_skill_graph"
+        name="Skills Graph"
+        parent="hr.menu_hr_root"
+        action="action_employee_skill_graph"/>
+</odoo>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+  <data>
+    <record id="action_employee_skill_pdf" model="ir.actions.report">
+        <field name="name">Employee Skill (PDF)</field>
+        <field name="model">hr.employee.skill</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">custom_hr_employee.employees_skills_template</field>
+        <field name="binding_model_id" ref="model_hr_employee_skill"/>
+        <field name="binding_type">report</field>
+    </record>
+  </data>
+</odoo>

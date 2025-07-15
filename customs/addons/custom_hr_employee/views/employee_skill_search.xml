@@ -1,0 +1,15 @@
+<odoo>
+  <record id="view_employee_skill_search" model="ir.ui.view">
+    <field name="name">hr.employee.skill.search</field>
+    <field name="model">hr.employee.skill</field>
+    <field name="arch" type="xml">
+        <search>
+            <field name="employee_id"/>
+            <field name="employee_department_id"/>
+            <field name="skill_type_id"/>
+            <field name="skill_level_id"/>
+            <filter string="Group by Department" name="group_by_employee_department_id" context="{'group_by': 'employee_department_id'}"/>
+        </search>
+    </field>
+  </record>
+</odoo>
