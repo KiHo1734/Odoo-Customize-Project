@@ -3,10 +3,12 @@
     'version': '1.0',
     'depends': ['hr'],
     'data': [
-        'views/hr_employee_view.xml',
+        'views/hr_employee_detail_view.xml',
         'views/position_history_view.xml',
         'security/ir.model.access.csv', 
         'views/hr_private_info_view.xml',
+        'reports/employees_property_report.xml',
+        'reports/employees_property_template.xml',
     ],
     'assets': {
         'web.assets_backend': [
