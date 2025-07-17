@@ -1,14 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <template id="employees_skills_template">
-    <t t-call="web.basic_layout">
-      <t t-set="docs" t-value="docs"/>
-      <div class="page">
-        <h2 style="text-align:center;">Employee Skills by Employee</h2>
+    <style>
+      .page { padding-top: 0 !important; }
+    </style>
+
+    <t t-set="o" t-value="docs[0]"/>
+
+    <!-- เรียก layout -->
+    <t t-call="web.external_layout">
+      <main class="page">
+        <h2 class="text-center">Employee Skills by Employee</h2>
+
+        <p>
+          รายงานนี้สรุปทักษะของพนักงานแต่ละคน แบ่งตามประเภทและระดับความสามารถ
+          (พิมพ์เมื่อ: <t t-esc="datetime.datetime.today().strftime('%d/%m/%Y')"/>)
+        </p>
+
         <t t-set="employees" t-value="docs.mapped('employee_id').sorted(key=lambda e: e.name)"/>
         <t t-foreach="employees" t-as="employee">
-          <h3><t t-esc="employee.name"/></h3>
-          <table class="table table-sm table-hover o_main_table" style="margin-bottom: 20px;">
+          <h3 class="mt16"><t t-esc="employee.name"/></h3>
+
+          <table class="table table-sm table-hover o_main_table">
             <thead>
               <tr>
                 <th>Department</th>
@@ -18,10 +31,9 @@
               </tr>
             </thead>
             <tbody>
-              <!-- Filter docs to show only skills of current employee -->
               <t t-foreach="docs.filtered(lambda s: s.employee_id.id == employee.id)" t-as="skill">
                 <tr>
-                  <td><t t-esc="skill.employee_department_id.display_name"/></td>
+                  <td><t t-esc="skill.leaf_department_name"/></td>
                   <td><t t-esc="skill.skill_type_id.name"/></td>
                   <td><t t-esc="skill.skill_id.name"/></td>
                   <td><t t-esc="skill.skill_level_id.name"/></td>
@@ -29,8 +41,22 @@
               </t>
             </tbody>
           </table>
+
+          <!-- แสดงข้อมูลเพิ่มเติมสำหรับ Debug -->
+          <div class="mt8">
+            <small>
+              <strong>Debug Info:</strong><br/>
+              Employee Department: <t t-esc="employee.department_id.display_name"/><br/>
+              <t t-set="employee_skills" t-value="docs.filtered(lambda s: s.employee_id.id == employee.id)"/>
+              <t t-if="employee_skills">
+                <t t-set="first_skill" t-value="employee_skills[0]"/>
+                Leaf Department Name: <t t-esc="first_skill.leaf_department_name or 'Not Set'"/><br/>
+                Root Department: <t t-esc="first_skill.root_department_id.display_name or 'Not Set'"/>
+              </t>
+            </small>
+          </div>
         </t>
-      </div>
+      </main>
     </t>
   </template>
 </odoo>

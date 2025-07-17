@@ -6,9 +6,11 @@
         <search>
             <field name="employee_id"/>
             <field name="employee_department_id"/>
+            <field name="leaf_department_name"/>
             <field name="skill_type_id"/>
             <field name="skill_level_id"/>
             <filter string="Group by Department" name="group_by_employee_department_id" context="{'group_by': 'employee_department_id'}"/>
+            <filter string="Group by Main Department" name="group_by_employee_leaf_department_name" context="{'group_by': 'leaf_department_name'}"/>
         </search>
     </field>
   </record>

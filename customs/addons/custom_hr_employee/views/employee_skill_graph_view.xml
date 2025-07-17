@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <graph string="Employee Skills by Level" type="bar" stacked="True">
                 <field name="id" type="measure"/>
-                <field name="employee_department_id" groupby="True"/>
+                <field name="leaf_department_name" groupby="True"/>
                 <field name="skill_type_id" groupby="True"/>
             </graph>    
         </field>
@@ -19,7 +19,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="employee_id"/>
-                <field name="employee_department_id"/>
+                <field name="leaf_department_name"/>
                 <field name="skill_type_id"/>
                 <field name="skill_id"/>
                 <field name="skill_level_id"/>
@@ -31,17 +31,18 @@
     <record id="action_employee_skill_graph" model="ir.actions.act_window">
         <field name="name">Skill Graph</field>
         <field name="res_model">hr.employee.skill</field>
-
-        <!-- ใส่ list ต่อจาก graph -->
         <field name="view_mode">graph,list</field>
-
-        <!-- อ้าง view graph + list ของเรา -->
         <field name="views"
             eval="[(ref('view_employee_skill_graph'), 'graph'),
-                    (ref('view_employee_skill_list'),  'list')]"/>
-
+                (ref('view_employee_skill_list'),  'list')]"/>
         <field name="domain">[('employee_id.active','=', True)]</field>
+
+        <!-- ✅ เพิ่ม context นี้ -->
+        <field name="context">
+            {'group_by': ['leaf_department_name', 'skill_type_id']}
+        </field>
     </record>
+
 
     <menuitem id="menu_employee_skill_graph"
         name="Skills Graph"
