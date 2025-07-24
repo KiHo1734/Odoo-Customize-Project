@@ -8,6 +8,7 @@ class HrEmployee(models.Model):
     retirement_date = fields.Date(string='Retirement Date')
     position_change_date = fields.Date(string='Position Change Date')
     end_date = fields.Date(string='End Date') 
+    is_special_position = fields.Boolean(string="Specialized Position")
 
     currency_id = fields.Many2one(
         'res.currency',

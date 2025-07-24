@@ -7,6 +7,7 @@
         <field name="arch" type="xml">
             <!-- ส่วนนี้เป็นส่วนที่ใช้ในการเพิ่ม Fields โดยเพิ่มต่อจากตัว Xpath ของ Core Module -->
             <xpath expr="//field[@name='work_phone']" position="after"> 
+                <field name="is_special_position"/>
                 <field name="salary" options="{'currency_field': 'currency_id'}"/>
             </xpath>
             <xpath expr="//field[@name='salary']" position="after">

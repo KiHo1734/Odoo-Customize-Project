@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- skill_certification_view.xml -->
+<odoo>
+  <record id="view_employee_skill_form" model="ir.ui.view">
+    <field name="name">hr.employee.skill.form</field>
+    <field name="model">hr.employee.skill</field>
+    <field name="arch" type="xml">
+      <form string="Employee Skill">
+        <sheet>
+          <group>
+            <group>
+              <field name="skill_type_id" widget="radio"/>
+            </group>
+            <group>
+              <field name="skill_id" options="{'no_open': True, 'no_create': True}"
+                      context="{'default_skill_type_id': skill_type_id}"
+                      domain="[('skill_type_id', '=', skill_type_id)]"
+                      invisible="not skill_type_id"/>
+              <label for="skill_level_id"
+                      invisible="not (skill_id or skill_type_id)"/>
+              <div class="o_row" invisible="not (skill_id or skill_type_id)">
+                  <span class="ps-0" style="flex:1">
+                      <field name="skill_level_id"
+                              readonly="not skill_id"
+                              options="{'no_open': True, 'no_create': True}"
+                              context="{'from_skill_level_dropdown': True, 'default_skill_type_id': skill_type_id}" />
+                  </span>
+                  <span style="flex:1">
+                      <field name="level_progress" widget="progressbar" class="o_hr_skills_progress" invisible="not skill_level_id" />
+                  </span>
+              </div>
+              <field name="certification_file" filename="certification_filename"/>
+              <field name="certification_filename" invisible="1"/>
+            </group>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+</odoo>
+
+

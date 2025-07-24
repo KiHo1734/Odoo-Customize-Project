@@ -13,6 +13,7 @@
         'views/employee_skill_graph_view.xml',
         'reports/employees_skills_report.xml',
         'reports/employees_skills_template.xml',
+        'views/skill_certification_view.xml',
     ],
     'assets': {
         'web.assets_backend': [
