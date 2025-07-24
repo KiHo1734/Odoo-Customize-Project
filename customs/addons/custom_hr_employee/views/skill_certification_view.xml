@@ -31,6 +31,8 @@
               </div>
               <field name="certification_file" filename="certification_filename"/>
               <field name="certification_filename" invisible="1"/>
+              <field name="skill_certification_allowance" options="{'currency_field': 'currency_id'}"/>
+              <field name="currency_id" invisible="1"/>
             </group>
           </group>
         </sheet>

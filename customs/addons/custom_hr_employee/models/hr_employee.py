@@ -8,9 +8,36 @@ class HrEmployee(models.Model):
     retirement_date = fields.Date(string='Retirement Date')
     position_change_date = fields.Date(string='Position Change Date')
     end_date = fields.Date(string='End Date') 
+    
     is_special_position = fields.Boolean(string="Specialized Position")
+    special_position_allowance = fields.Monetary(
+        string="Special Allowance",
+        currency_field="currency_id",
+        default=5000.0
+    )
 
-    currency_id = fields.Many2one(
+    employee_skill_ids = fields.One2many(
+        'hr.employee.skill',
+        'employee_id',
+        string='Skills'
+    )
+
+    total_salary = fields.Monetary(string="Total Salary", compute="_compute_total_salary", currency_field="currency_id", store=False)
+
+    @api.depends(
+        'salary',
+        'is_special_position',
+        'special_position_allowance',
+        'employee_skill_ids.skill_certification_allowance',
+    )
+    def _compute_total_salary(self):
+        for rec in self:
+            base = rec.salary or 0.0
+            special = rec.special_position_allowance if rec.is_special_position else 0.0
+            skill_total = sum(rec.employee_skill_ids.mapped('skill_certification_allowance') or [])
+            rec.total_salary = base + special + skill_total
+
+        currency_id = fields.Many2one(
         'res.currency',
         string="Currency",
         default=lambda self: self.env.company.currency_id
