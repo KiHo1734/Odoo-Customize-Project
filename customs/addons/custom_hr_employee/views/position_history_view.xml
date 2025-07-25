@@ -11,6 +11,17 @@
         <field name="end_date"/>
         <field name="department_id"/>
         <templates>
+          <!-- Template เมื่อไม่มีข้อมูล -->
+          <t t-name="empty">
+            <div class="alert alert-info text-center m-3">
+              <div class="mb-2">
+                <i class="fa fa-info-circle fa-2x"></i>
+              </div>
+              <h6>ยังไม่มีประวัติการทำงาน</h6>
+              <small class="text-muted">เพิ่มข้อมูลประวัติการทำงานของพนักงานท่านนี้</small>
+            </div>
+          </t>
+          
           <t t-name="card">
             <div class="oe_kanban_card d-flex position-relative">
               <!-- ปุ่มลบ -->
@@ -32,11 +43,27 @@
                   <t t-if="record.end_date"><t t-esc="record.end_date.value"/></t>
                   <t t-if="!record.end_date">Current</t>
                 </div>
+                
+                <!-- แสดง Job หรือข้อความแจ้งเตือน -->
                 <div class="fw-bold" style="font-size: 17px;">
-                  <t t-esc="record.job_id.value"/>
+                  <t t-if="record.job_id.value">
+                    <t t-esc="record.job_id.value"/>
+                  </t>
+                  <t t-else="">
+                    <span class="text-warning fst-italic">
+                      <i class="fa fa-exclamation-triangle me-1"></i>
+                      ไม่ได้ระบุตำแหน่งงาน
+                    </span>
+                  </t>
                 </div>
+                
                 <div class="text-muted" style="font-size: 14px;">
-                  <t t-esc="record.department_id.value"/>
+                  <t t-if="record.department_id.value">
+                    <t t-esc="record.department_id.value"/>
+                  </t>
+                  <t t-else="">
+                    <span class="text-muted fst-italic">ไม่ได้ระบุแผนก</span>
+                  </t>
                 </div>
               </div>
             </div>

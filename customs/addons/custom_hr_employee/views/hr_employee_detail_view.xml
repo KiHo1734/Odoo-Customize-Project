@@ -19,10 +19,10 @@
                 <field name="position_change_date"/>
                 <field name="retirement_date"/>
             </xpath>
-            <!-- ส่วนนี้เป็นส่วนที่ใช้ในการเพิ่ม Postion History Module ทีสร้างเอง โดยเพิ่มต่อจากตัว Xpath ของ Core Module -->
+            <!-- ส่วนนี้เป็นส่วนที่ใช้ในการเพิ่ม Position History Module ที่สร้างเอง โดยเพิ่มต่อจากตัว Xpath ของ Core Module -->
            <xpath expr="//notebook" position="inside">
                 <page string="Position History">
-                   <field 
+                    <field 
                         name="position_history_ids" 
                         mode="kanban" 
                         context=
@@ -31,6 +31,7 @@
                             'default_order': 'start_date desc, id desc'
                         }"
                         options="{'no_create': True}"
+                        help="ยังไม่มีประวัติการทำงาน คลิกปุ่ม 'เพิ่มรายการ' เพื่อสร้างข้อมูลใหม่"
                     />
                 </page>
             </xpath>

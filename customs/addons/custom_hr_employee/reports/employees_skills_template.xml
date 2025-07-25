@@ -51,7 +51,6 @@
               <t t-if="employee_skills">
                 <t t-set="first_skill" t-value="employee_skills[0]"/>
                 Leaf Department Name: <t t-esc="first_skill.leaf_department_name or 'Not Set'"/><br/>
-                Root Department: <t t-esc="first_skill.root_department_id.display_name or 'Not Set'"/>
               </t>
             </small>
           </div>

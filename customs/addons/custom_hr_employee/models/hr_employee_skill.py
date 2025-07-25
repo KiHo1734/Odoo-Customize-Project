@@ -19,48 +19,86 @@ class EmployeeSkill(models.Model):
         readonly=True,
     )
 
-    # (C) Root Department – ถ้าต้องการ
-    root_department_id = fields.Many2one(
-        "hr.department",
-        string="Root Department",
-        compute="_compute_root_department",
+    # C. Skill Level Display (สำหรับแสดงชื่อระดับ)
+    skill_level_name = fields.Char(
+        string="Skill Level Name",
+        related="skill_level_id.name",
+        readonly=True,
+        store=True,
+    )
+
+    # D. Skill Progress Percentage (คำนวณแบบง่ายๆ)
+    skill_progress_percentage = fields.Float(
+        string="Skill Progress (%)",
+        compute="_compute_skill_progress",
         store=True,
         readonly=True,
     )
 
-    @api.model
-    def create(self, vals):
-        """เมื่อสร้างใหม่ ให้ compute ทันที"""
-        result = super().create(vals)
-        # ไม่ต้อง call _compute_leaf_department() เพราะไม่มี method นี้
-        result._compute_leaf_department_name()
-        result._compute_root_department()
-        return result
-
-    def recompute_departments(self):
-        """Method สำหรับบังคับ recompute ข้อมูล"""
-        for rec in self:
-            rec._compute_leaf_department_name()
-            rec._compute_root_department()
-        return True
-
-    @api.depends("employee_department_id", "employee_department_id.name")
+    @api.depends("employee_id.department_id")
     def _compute_leaf_department_name(self):
         for rec in self:
-            if rec.employee_department_id:
-                # ใช้ชื่อแผนกที่พนักงานสังกัดโดยตรง
-                rec.leaf_department_name = rec.employee_department_id.name
+            dept = rec.employee_department_id
+            print(f"[DEBUG] Emp: {rec.employee_id.name}, Dept: {dept and dept.name}, Full: {dept and dept.complete_name}")
+            if dept:
+                full_name = dept.complete_name or dept.name
+                if '/' in full_name:
+                    rec.leaf_department_name = full_name.split('/')[-1].strip()
+                else:
+                    rec.leaf_department_name = full_name.strip()
             else:
                 rec.leaf_department_name = False
 
-    @api.depends("employee_id.department_id")
-    def _compute_root_department(self):
+    @api.depends("skill_level_id")
+    def _compute_skill_progress(self):
+        """คำนวณความก้าวหน้าของทักษะแบบง่ายๆ"""
         for rec in self:
-            dept = rec.employee_id.department_id
-            if dept:
-                # หา root department โดยไล่ขึ้นไปจนถึงระดับบนสุด
-                while dept.parent_id:
-                    dept = dept.parent_id
-                rec.root_department_id = dept
+            if rec.skill_level_id:
+                level_name = rec.skill_level_id.name.lower() if rec.skill_level_id.name else ""
+                if 'beginner' in level_name or 'basic' in level_name or '1' in level_name:
+                    rec.skill_progress_percentage = 20
+                elif 'intermediate' in level_name or 'medium' in level_name or '2' in level_name:
+                    rec.skill_progress_percentage = 40
+                elif 'advanced' in level_name or 'good' in level_name or '3' in level_name:
+                    rec.skill_progress_percentage = 60
+                elif 'expert' in level_name or 'very good' in level_name or '4' in level_name:
+                    rec.skill_progress_percentage = 80
+                elif 'master' in level_name or 'excellent' in level_name or '5' in level_name:
+                    rec.skill_progress_percentage = 100
+                else:
+                    rec.skill_progress_percentage = min((rec.skill_level_id.id % 5 + 1) * 20, 100)
             else:
-                rec.root_department_id = False
+                rec.skill_progress_percentage = 0
+
+    # สำหรับเรียกใช้บังคับคำนวณใหม่ (เช่นจาก cron หรือ dev action)
+    def recompute_departments(self):
+        for rec in self:
+            rec._compute_leaf_department_name()
+            rec._compute_skill_progress()
+        return True
+
+    def get_department_hierarchy(self):
+        """ดึงลำดับชั้นแผนกทั้งหมด"""
+        self.ensure_one()
+        if not self.employee_department_id:
+            return []
+        hierarchy = []
+        dept = self.employee_department_id
+        while dept:
+            hierarchy.insert(0, dept.name)
+            dept = dept.parent_id
+        return hierarchy
+
+    def get_department_path(self, separator=" > "):
+        """ดึง path ของแผนกในรูปแบบ string"""
+        hierarchy = self.get_department_hierarchy()
+        return separator.join(hierarchy) if hierarchy else ""
+
+    @api.model
+    def _update_department_fields(self):
+        """Cron job method to update all department-related fields"""
+        all_skills = self.search([])
+        all_skills.recompute_departments()
+        return True
+
+        
