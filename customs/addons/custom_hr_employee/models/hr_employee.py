@@ -1,4 +1,6 @@
+from datetime import date
 from odoo import models, fields, api
+from dateutil.relativedelta import relativedelta
 
 class HrEmployee(models.Model):
     _inherit = 'hr.employee'
@@ -37,7 +39,7 @@ class HrEmployee(models.Model):
             skill_total = sum(rec.employee_skill_ids.mapped('skill_certification_allowance') or [])
             rec.total_salary = base + special + skill_total
 
-        currency_id = fields.Many2one(
+    currency_id = fields.Many2one(
         'res.currency',
         string="Currency",
         default=lambda self: self.env.company.currency_id
@@ -97,4 +99,15 @@ class HrEmployee(models.Model):
                     key=lambda r: r.start_date or today, reverse=True
                 )
 
+    days_left_to_retire = fields.Char(string="เวลาที่เหลือก่อนเกษียณ", compute="_compute_retirement_delta", store=False)
+
+    @api.depends('retirement_date')
+    def _compute_retirement_delta(self):
+        today = date.today()
+        for rec in self:
+            if rec.retirement_date:
+                diff = relativedelta(rec.retirement_date, today)
+                rec.days_left_to_retire = f"{diff.years} ปี {diff.months} เดือน"
+            else:
+                rec.days_left_to_retire = "-"
 
