@@ -162,7 +162,7 @@
         <field name="domain">[('employee_id.active','=', True)]</field>
         <field name="context">
             {
-                'group_by': ['skill_type_id', 'leaf_department_name'],
+                'group_by': ['leaf_department_name', 'skill_type_id'],
                 'search_default_active_employees': 1
             }
         </field>

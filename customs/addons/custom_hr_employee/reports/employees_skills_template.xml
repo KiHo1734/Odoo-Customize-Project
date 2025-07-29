@@ -10,50 +10,51 @@
     <!-- เรียก layout -->
     <t t-call="web.external_layout">
       <main class="page">
-        <h2 class="text-center">Employee Skills by Employee</h2>
+        <h2 class="text-center">Employee Skills by Department</h2>
 
         <p>
-          รายงานนี้สรุปทักษะของพนักงานแต่ละคน แบ่งตามประเภทและระดับความสามารถ
+          รายงานนี้สรุปทักษะของพนักงานแต่ละคน แบ่งตามแผนก ประเภท และระดับความสามารถ
           (พิมพ์เมื่อ: <t t-esc="datetime.datetime.today().strftime('%d/%m/%Y')"/>)
         </p>
 
-        <t t-set="employees" t-value="docs.mapped('employee_id').sorted(key=lambda e: e.name)"/>
-        <t t-foreach="employees" t-as="employee">
-          <h3 class="mt16"><t t-esc="employee.name"/></h3>
+        <!-- ดึง department ที่มีพนักงานใน docs -->
+        <t t-set="departments" t-value="docs.mapped('employee_id.department_id').filtered(lambda d: d).sorted(key=lambda d: d.name)"/>
+        
+        <t t-foreach="departments" t-as="department">
+          <h3 class="mt16"><t t-esc="department.name"/></h3>
 
           <table class="table table-sm table-hover o_main_table">
             <thead>
               <tr>
-                <th>Department</th>
+                <th>Employee</th>
                 <th>Skill Type</th>
                 <th>Skill</th>
                 <th>Level</th>
               </tr>
             </thead>
             <tbody>
-              <t t-foreach="docs.filtered(lambda s: s.employee_id.id == employee.id)" t-as="skill">
-                <tr>
-                  <td><t t-esc="skill.leaf_department_name"/></td>
-                  <td><t t-esc="skill.skill_type_id.name"/></td>
-                  <td><t t-esc="skill.skill_id.name"/></td>
-                  <td><t t-esc="skill.skill_level_id.name"/></td>
-                </tr>
+              <!-- ดึงพนักงานใน department นี้ -->
+              <t t-set="dept_employees" t-value="docs.mapped('employee_id').filtered(lambda e: e.department_id.id == department.id).sorted(key=lambda e: e.name)"/>
+              
+              <t t-foreach="dept_employees" t-as="employee">
+                <t t-set="employee_skills" t-value="docs.filtered(lambda s: s.employee_id.id == employee.id)"/>
+                <t t-set="first_row" t-value="True"/>
+                <t t-foreach="employee_skills" t-as="skill">
+                  <tr>
+                    <td>
+                      <t t-if="first_row">
+                        <t t-esc="employee.name"/>
+                        <t t-set="first_row" t-value="False"/>
+                      </t>
+                    </td>
+                    <td><t t-esc="skill.skill_type_id.name or ''"/></td>
+                    <td><t t-esc="skill.skill_id.name or ''"/></td>
+                    <td><t t-esc="skill.skill_level_id.name or ''"/></td>
+                  </tr>
+                </t>
               </t>
             </tbody>
           </table>
-
-          <!-- แสดงข้อมูลเพิ่มเติมสำหรับ Debug -->
-          <div class="mt8">
-            <small>
-              <strong>Debug Info:</strong><br/>
-              Employee Department: <t t-esc="employee.department_id.display_name"/><br/>
-              <t t-set="employee_skills" t-value="docs.filtered(lambda s: s.employee_id.id == employee.id)"/>
-              <t t-if="employee_skills">
-                <t t-set="first_skill" t-value="employee_skills[0]"/>
-                Leaf Department Name: <t t-esc="first_skill.leaf_department_name or 'Not Set'"/><br/>
-              </t>
-            </small>
-          </div>
         </t>
       </main>
     </t>

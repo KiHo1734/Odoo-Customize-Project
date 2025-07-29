@@ -5,7 +5,8 @@
     <field name="inherit_id" ref="hr.view_employee_form"/>
     <field name="arch" type="xml">
       <xpath expr="//field[@name='country_id']" position="before">
-        <field name="id_card_image" widget="work_permit_upload"/>
+        <field name="id_card_image" filename="id_card_image_filename"/>
+        <button name="extract_info_from_image" type="object" string="Recognize" class="btn btn-primary"/>
       </xpath>
       <xpath expr="//field[@name='country_of_birth']" position="after">
         <field name="religion"/>

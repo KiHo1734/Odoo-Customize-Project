@@ -13,7 +13,9 @@ import re
 class HrPersonalCardExtract(models.Model):
     _inherit = 'hr.employee'
 
-    id_card_image = fields.Binary(string='ID Card Image', attachment=False)
+    id_card_image = fields.Binary(string='ID Card Image')
+    id_card_image_filename = fields.Char(string="ID Card Filename")
+
     religion = fields.Char(string="Religion")
     identification_id_encrypted = fields.Char(store=True)
 
@@ -65,11 +67,6 @@ class HrPersonalCardExtract(models.Model):
             else:
                 rec.identification_id_encrypted = False
 
-    @api.onchange('id_card_image')
-    def _onchange_id_card_image(self):
-        if self.id_card_image:
-            self._extract_from_image_single()
-
     def extract_info_from_image(self):
         for rec in self:
             rec._extract_from_image_single()
@@ -117,7 +114,7 @@ class HrPersonalCardExtract(models.Model):
                 temp_path,
                 base_url="http://localhost:11434/v1",
                 api_key="sk-Mt83qPXTLlk25KJHBhpaBYm35ghgqsLGU0CetBZy3h7RRhGG",
-                model="scb10x/typhoon-ocr-3b"
+                model="scb10x/typhoon-ocr-7b"
             )
 
             # ✅ แปลง markdown เป็น dict
@@ -139,7 +136,10 @@ class HrPersonalCardExtract(models.Model):
                 raise UserError("ไม่พบเลขประจำตัวประชาชนในภาพ")
             self.identification_id_encrypted = self._get_or_create_fernet().encrypt(id_number.encode()).decode()
 
-            self.name = result.get("Last name") or result.get("ชื่อตัวและชื่อสกุล", "")
+            self.name = result.get("Name")
+            if not self.name:
+                self.name = result.get("ชื่อตัวและชื่อสกุล", "")
+
             self.religion = result.get("ศาสนา", "")
 
             birth_raw = result.get("เกิดวันที่") or result.get("Date of Birth")
@@ -156,5 +156,3 @@ class HrPersonalCardExtract(models.Model):
 
         except Exception as e:
             raise UserError(f"อ่านข้อมูลจากภาพไม่สำเร็จ: {e}")
-        finally:
-            self.id_card_image = False
