@@ -1,0 +1,25 @@
+<odoo>
+  <record id="view_hr_retirement_report_wizard_form" model="ir.ui.view">
+    <field name="name">hr.retirement.report.wizard.form</field>
+    <field name="model">hr.retirement.report.wizard</field>
+    <field name="arch" type="xml">
+      <form string="เลือกช่วงวันที่เกษียณ">
+        <group>
+          <field name="date_from"/>
+          <field name="date_to"/>
+        </group>
+        <footer>
+          <button string="ปริ้นรายงาน" type="object" name="print_report" class="btn-primary"/>
+          <button string="ยกเลิก" class="btn-secondary" special="cancel"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+
+  <record id="action_hr_retirement_report_wizard" model="ir.actions.act_window">
+    <field name="name">เลือกช่วงวันที่เกษียณ</field>
+    <field name="res_model">hr.retirement.report.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field> <!-- เปิดเป็น popup -->
+  </record>
+</odoo>

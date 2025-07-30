@@ -110,4 +110,3 @@ class HrEmployee(models.Model):
                 rec.days_left_to_retire = f"{diff.years} ปี {diff.months} เดือน"
             else:
                 rec.days_left_to_retire = "-"
-

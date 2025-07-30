@@ -1,18 +1,23 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
   <data>
-    <record id="action_report_employee_list" model="ir.actions.report">
-      <field name="name">Print Employees List</field>
-      <field name="model">hr.employee</field>
+    <!-- สร้าง ir.model สำหรับโมเดล wizard -->
+    <record id="model_hr_retirement_report_wizard" model="ir.model">
+      <field name="name">hr.retirement.report.wizard</field>
+      <field name="model">hr.retirement.report.wizard</field>
+    </record>
+
+    <!-- รายงาน -->
+    <record id="action_report_retirement_employee_list" model="ir.actions.report">
+      <field name="name">พิมพ์รายงานพนักงานเกษียณ</field>
+      <field name="model">hr.retirement.report.wizard</field>
       <field name="report_type">qweb-pdf</field>
       <field name="report_name">custom_hr_employee.report_employee_list_template</field>
       <field name="report_file">custom_hr_employee.report_employee_list_template</field>
-      <field name="print_report_name">'Employees List'</field>
-
-      <!-- ใส่โมเดลปลายทาง -->
-      <field name="binding_model_id" ref="hr.model_hr_employee"/>
-      <!-- เปลี่ยนค่าบรรทัดนี้ -->
+      <field name="print_report_name">'Retirement_Employees_List'</field>
+      <field name="binding_model_id" ref="custom_hr_employee.model_hr_retirement_report_wizard"/>
       <field name="binding_type">report</field>
     </record>
   </data>
 </odoo>
+
+

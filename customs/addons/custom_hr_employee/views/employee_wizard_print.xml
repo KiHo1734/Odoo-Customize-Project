@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Server Action ที่จะเรียก Wizard และอยู่ใน Print dropdown -->
+    <record id="action_retirement_wizard_server" model="ir.actions.server">
+        <field name="name">Print Employee List</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="binding_model_id" ref="hr.model_hr_employee"/>
+        <field name="binding_type">report</field>
+        <field name="state">code</field>
+        <field name="code">
+            action = {
+                'type': 'ir.actions.act_window',
+                'name': 'เลือกช่วงวันที่เกษียณ',
+                'res_model': 'hr.retirement.report.wizard',
+                'view_mode': 'form',
+                'target': 'new',
+                'context': {
+                    'active_ids': records.ids,
+                    'active_model': 'hr.employee',
+                }
+            }
+        </field>
+    </record>
+
+    <!-- Report Action สำหรับสร้าง PDF จาก Wizard -->
+    <record id="action_report_retirement_employee_list" model="ir.actions.report">
+        <field name="name">Print Employee List</field>
+        <field name="model">hr.retirement.report.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">custom_hr_employee.report_employee_list_template</field>
+    </record>
+</odoo>

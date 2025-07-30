@@ -14,6 +14,8 @@
         'reports/employees_skills_report.xml',
         'reports/employees_skills_template.xml',
         'views/skill_certification_view.xml',
+        'wizard/hr_retirement_report_wizard_views.xml',
+        'views/employee_wizard_print.xml',
     ],
     'assets': {
         'web.assets_backend': [

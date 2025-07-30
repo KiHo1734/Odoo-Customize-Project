@@ -5,21 +5,23 @@
       .page { padding-top: 0 !important; }
     </style>
 
-    <t t-set="o" t-value="docs[0]"/>
+    <t t-set="form" t-value="form"/>
+    <t t-set="employee_ids" t-value="employee_ids"/>
+    <t t-set="departments" t-value="employee_ids.mapped('department_id').filtered(lambda d: d).sorted(key=lambda d: d.name)"/>
 
-    <!-- เรียก layout -->
     <t t-call="web.external_layout">
       <main class="page">
-        <h2 class="text-center">Employees List</h2>
+        <h2 class="text-center">รายงานพนักงานเกษียณ</h2>
 
-        <p>
-          รายงานนี้แสดงรายชื่อพนักงานโดยแบ่งตามแผนก
-          (พิมพ์เมื่อ: <t t-esc="datetime.datetime.today().strftime('%d/%m/%Y')"/>)
-        </p>
+      <p>
+        รายงานนี้แสดงรายชื่อพนักงานที่มีกำหนดเกษียณในช่วงวันที่
+        <t t-esc="form.get('date_from', '')"/>
+          ถึง
+        <t t-esc="form.get('date_to', '')"/>
+        (พิมพ์เมื่อ: <t t-esc="datetime.datetime.today().strftime('%d/%m/%Y')"/>)
+      </p>
 
-        <!-- ดึง department ที่มีพนักงานใน docs -->
-      <t t-set="departments" t-value="docs.mapped('department_id').filtered(lambda d: d).sorted(key=lambda d: d.name)"/>
-        
+
         <t t-foreach="departments" t-as="department">
           <h3 class="mt16"><t t-esc="department.name"/></h3>
 
@@ -31,16 +33,14 @@
                 <th>Job Position</th>
                 <th>Start Date</th>
                 <th>Retirement Date</th>
-                <th>Years Until Retirement</th>
+                <th>Days Until Retirement</th>
                 <th>Current Salary</th>
                 <th>Annual Salary</th>
               </tr>
             </thead>
             <tbody>
-              <!-- ดึงพนักงานใน department นี้ -->
-              <t t-set="dept_employees" t-value="docs.filtered(lambda e: e.department_id.id == department.id).sorted(key=lambda e: e.name)"/>
+              <t t-set="dept_employees" t-value="employee_ids.filtered(lambda e: e.department_id.id == department.id).sorted(key=lambda e: e.name)"/>
               <t t-set="emp_counter" t-value="0"/>
-
               <t t-foreach="dept_employees" t-as="employee">
                 <t t-set="emp_counter" t-value="emp_counter + 1"/>
                 <tr>
@@ -49,15 +49,8 @@
                   <td><t t-esc="employee.job_id.name or '-'"/></td>
                   <td><t t-esc="employee.start_date.strftime('%d/%m/%Y') if employee.start_date else '-'"/></td>
                   <td><t t-esc="employee.retirement_date.strftime('%d/%m/%Y') if employee.retirement_date else '-'"/></td>
-
-                  <!-- ระยะเวลาถึงเกษียณ -->
-                  <td>
-                    <t t-esc="employee.days_left_to_retire or '-'"/>
-                  </td>
-                  <!-- เงินเดือนปัจจุบัน -->
+                  <td><t t-esc="employee.days_left_to_retire or '-'"/></td>
                   <td><t t-esc="'{:,.2f}'.format(employee.salary or 0.0)"/></td>
-
-                  <!-- เงินเดือนต่อปี -->
                   <td><t t-esc="'{:,.2f}'.format((employee.salary or 0.0) * 12)"/></td>
                 </tr>
               </t>
