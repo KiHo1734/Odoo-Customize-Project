@@ -176,6 +176,22 @@
         </field>
     </record>
 
+    <!-- Action แยกสำหรับ list view โดยเฉพาะ ตั้ง group_by -->
+    <record id="action_employee_skill_list_grouped" model="ir.actions.act_window">
+        <field name="name">Employee Skills List Grouped</field>
+        <field name="res_model">hr.employee.skill</field>
+        <field name="view_mode">list</field>
+        <field name="views" eval="[(ref('view_employee_skill_list'), 'list')]"/>
+        <field name="search_view_id" ref="view_employee_skill_search"/>
+        <field name="domain">[('employee_id.active','=', True)]</field>
+        <field name="context">
+            {
+                'group_by': ['leaf_department_name', 'skill_type_id', 'employee_id'],
+                'search_default_active_employees': 1
+            }
+        </field>
+    </record>
+
     <!-- Action สำหรับกราฟแบบต่างๆ -->
     <record id="action_employee_skill_pie_chart" model="ir.actions.act_window">
         <field name="name">Skills Distribution</field>
@@ -217,4 +233,9 @@
         action="action_employee_skill_trend"
         sequence="30"/>
 
+    <menuitem id="menu_employee_skill_list_grouped"
+            name="Skills List"
+            parent="menu_employee_skill_analysis"
+            action="action_employee_skill_list_grouped"
+            sequence="15"/>
 </odoo>

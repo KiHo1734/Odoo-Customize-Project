@@ -8,7 +8,7 @@
 
     <!-- รายงาน -->
     <record id="action_report_retirement_employee_list" model="ir.actions.report">
-      <field name="name">พิมพ์รายงานพนักงานเกษียณ</field>
+      <field name="name">Employee List</field>
       <field name="model">hr.retirement.report.wizard</field>
       <field name="report_type">qweb-pdf</field>
       <field name="report_name">custom_hr_employee.report_employee_list_template</field>
