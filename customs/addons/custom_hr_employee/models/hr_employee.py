@@ -1,6 +1,7 @@
 from datetime import date
 from odoo import models, fields, api
 from dateutil.relativedelta import relativedelta
+from datetime import timedelta
 
 class HrEmployee(models.Model):
     _inherit = 'hr.employee'
@@ -110,3 +111,71 @@ class HrEmployee(models.Model):
                 rec.days_left_to_retire = f"{diff.years} ปี {diff.months} เดือน"
             else:
                 rec.days_left_to_retire = "-"
+
+    # วันขาด และ วันลา จาก custom_attedances module
+
+    absent_days = fields.Integer(string="Absent Days", compute="_compute_attendance_stats", store=True)
+    leave_days = fields.Integer(string="Leave Days", compute="_compute_attendance_stats", store=True)
+
+    @api.depends('attendance_ids.check_in', 'attendance_ids.check_out')
+    def _compute_attendance_stats(self):
+        for employee in self:
+            today = fields.Date.today()
+            start_of_month = today.replace(day=1)
+            end_of_month = (start_of_month + relativedelta(months=1)) - timedelta(days=1)
+
+            working_days = employee._get_working_days_in_month(start_of_month, end_of_month)
+            
+            attended_days = set(
+                fields.Datetime.from_string(a.check_in).date()
+                for a in self.env['hr.attendance'].search([
+                    ('employee_id', '=', employee.id),
+                    ('check_in', '!=', False),
+                    ('check_in', '>=', start_of_month),
+                    ('check_in', '<=', end_of_month),
+                ])
+            )
+
+            approved_leaves = self.env['hr.leave'].search([
+                ('employee_id', '=', employee.id),
+                ('state', '=', 'validate'),
+                ('request_date_to', '>=', start_of_month),
+                ('request_date_from', '<=', end_of_month),
+            ])
+
+            leave_days = set()
+            for leave in approved_leaves:
+                date_iter = max(leave.request_date_from, start_of_month)
+                date_end = min(leave.request_date_to, end_of_month)
+                while date_iter <= date_end:
+                    if date_iter in working_days:
+                        leave_days.add(date_iter)
+                    date_iter += timedelta(days=1)
+
+            absent_days = len(working_days - attended_days - leave_days)
+
+            employee.absent_days = absent_days
+            employee.leave_days = len(leave_days)
+
+    def _get_working_days_in_month(self, start_date, end_date, employee):
+        """
+        ดึงวันทำงานจาก calendar (หากมี) หรือใช้จันทร์-ศุกร์เป็นค่าปริยาย
+        """
+        from datetime import timedelta
+
+        # พิจารณาจาก resource.calendar หรือใช้ค่าปริยาย
+        calendar = employee.resource_calendar_id or employee.company_id.resource_calendar_id
+        working_days = set()
+
+        date_iter = start_date
+        while date_iter <= end_date:
+            weekday = date_iter.weekday()  # Monday=0
+            if not calendar:
+                if weekday < 5:  # Mon-Fri
+                    working_days.add(date_iter)
+            else:
+                attendances = calendar.attendance_ids.filtered(lambda att: int(att.dayofweek) == weekday)
+                if attendances:
+                    working_days.add(date_iter)
+            date_iter += timedelta(days=1)
+        return working_days

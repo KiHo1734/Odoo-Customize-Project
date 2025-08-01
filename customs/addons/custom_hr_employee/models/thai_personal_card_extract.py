@@ -18,6 +18,7 @@ class HrPersonalCardExtract(models.Model):
 
     religion = fields.Char(string="Religion")
     identification_id_encrypted = fields.Char(store=True)
+    birthday = fields.Date(string="Date of Birth")
 
     identification_id = fields.Char(
         string="ID Number",
@@ -25,7 +26,6 @@ class HrPersonalCardExtract(models.Model):
         inverse="_inverse_identification_id",
         store=False,
     )
-
 
     def read(self, fields=None, load='_classic_read'):
         res = super().read(fields, load)
@@ -97,6 +97,19 @@ class HrPersonalCardExtract(models.Model):
         except:
             return None
 
+    @staticmethod   
+    def scan_id_card(image_path):
+        text_md = ocr_document(image_path, task_type="default", page_num=1)
+        text = text_md.replace("\n", " ").replace("#", "").strip()
+
+        thai_name_pattern = r"([ก-๙]{2,}\s[ก-๙]{2,})"
+        thai_names = re.findall(thai_name_pattern, text)
+
+        return {
+            "raw_text": text,
+            "thai_names": thai_names,
+        }
+
     def _extract_from_image_single(self):
         if not self.id_card_image:
             raise UserError("กรุณาอัปโหลดรูปบัตรประชาชนก่อน")
@@ -110,46 +123,73 @@ class HrPersonalCardExtract(models.Model):
             temp_path = f.name
 
         try:
-            markdown = ocr_document(
-                temp_path,
-                base_url="http://localhost:11434/v1",
-                api_key="sk-Mt83qPXTLlk25KJHBhpaBYm35ghgqsLGU0CetBZy3h7RRhGG",
-                model="scb10x/typhoon-ocr-7b"
-            )
+            result = self.scan_id_card(temp_path)
 
-            # ✅ แปลง markdown เป็น dict
-            def parse_markdown(text):
-                data = {}
-                for line in text.strip().splitlines():
-                    if line.startswith("#"):
-                        continue
-                    match = re.match(r"-\s*(.+?):\s*(.+)", line)
-                    if match:
-                        key, value = match.groups()
-                        data[key.strip()] = value.strip()
-                return data
+            text = result.get("raw_text", "")
+            thai_names = result.get("thai_names", [])
 
-            result = parse_markdown(markdown)
+            print("text = ", text)         
+            print("thai_names = ", thai_names)
 
-            id_number = result.get("เลขประจำตัวประชาชน") or result.get("รหัสประจำตัวประชาชน")
-            if not id_number:
+            # ล้างข้อความให้เหลือเฉพาะตัวเลข
+            digits_only = re.sub(r"[^0-9]", "", text)
+
+            # หาเลขประจำตัวประชาชน 13 หลัก
+            id_match = re.search(r"\d{13}", digits_only)
+            if not id_match:
                 raise UserError("ไม่พบเลขประจำตัวประชาชนในภาพ")
+
+            id_number = id_match.group(0)
             self.identification_id_encrypted = self._get_or_create_fernet().encrypt(id_number.encode()).decode()
 
-            self.name = result.get("Name")
-            if not self.name:
-                self.name = result.get("ชื่อตัวและชื่อสกุล", "")
+            # จับชื่ออังกฤษ: อนุญาตช่องว่าง, dot, comma
+            name_match = re.search(
+                r"Name\s*[:-]\s*([A-Za-z.,\- ]+?)(?=\s{2,}|Last name|เกิดวันที่|Date of Birth)", 
+                text, flags=re.IGNORECASE | re.DOTALL
+            )
 
-            self.religion = result.get("ศาสนา", "")
+            lastname_match = re.search(
+                r"Last name\s*[:-]\s*([A-Za-z.,\- ]+?)(?=\s{2,}|เกิดวันที่|Date of Birth|ที่อยู่|$)",
+                text, flags=re.IGNORECASE | re.DOTALL
+            )
 
-            birth_raw = result.get("เกิดวันที่") or result.get("Date of Birth")
-            if birth_raw:
-                birth_date = self.thai_date_to_date(birth_raw)
-                if birth_date:
-                    self.birthday = birth_date
+            if name_match and lastname_match:
+                full_name_en = (name_match.group(1).strip() + " " + lastname_match.group(1).strip())
+                self.name = " ".join(full_name_en.split())  # ลบช่องว่างเกิน
+            elif thai_names:
+                self.name = thai_names[0]
 
-            self.private_street = result.get("ที่อยู่", "")
+            # จับที่อยู่ด้วยหลายรูปแบบ
+            address = ''
+            address_patterns = [
+                r"ที่อยู่\s*[-:]\s*(.+?)\s+(วันออกบัตร|Date of Issue|$)",
+                r"Address\s*[-:]\s*(.+?)\s+(Date of Issue|$)",
+                r"(\d{1,4}\s+หมู่ที่\s*\d{1,2}.*?(อ\.|อำเภอ).*?(จ\.|จังหวัด).*?)(\s{2,}|-|$)",
+            ]
 
+            for pattern in address_patterns:
+                address_match = re.search(pattern, text, flags=re.DOTALL)
+                if address_match:
+                    address = address_match.group(1).strip()
+                    break
+
+            self.private_street = address
+
+            # เพิ่มส่วนหา วันเกิด
+            birth_date = None
+            birth_match = re.search(r"(?:เกิดวันที่|Date of Birth)\s*[:-]?\s*([0-9]{1,2}\s*[ก-๙\.]+\s*[0-9]{4})", text)
+            if birth_match:
+                birth_str = birth_match.group(1).strip()
+                birth_date = self.thai_date_to_date(birth_str)
+
+            self.birthday = birth_date
+
+            # แก้ regex ศาสนาให้ใช้ตรงๆ โดยไม่ต้อง mapping แล้ว
+            religion_match = re.search(r"\b(พุทธ|อิสลาม|คริสต์|พราหมณ์|ซิกข์|อื่น\s*ๆ|ไม่ระบุ)\b", text)
+            if religion_match:
+                self.religion = religion_match.group(1)
+
+            # ตั้งค่า country_id สำหรับข้อมูลส่วนตัว
             country = self.env.ref('base.th')
             self.country_id = country
             self.private_country_id = country
