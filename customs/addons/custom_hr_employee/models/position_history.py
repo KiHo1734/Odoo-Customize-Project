@@ -11,7 +11,7 @@ class PositionHistory(models.Model):
     end_date = fields.Date(string='End Date')
     description = fields.Text(string='Description')
 
-    @api.model
+    @api.model_create_multi
     def create(self, vals):
         res = super().create(vals)
         if res.employee_id:

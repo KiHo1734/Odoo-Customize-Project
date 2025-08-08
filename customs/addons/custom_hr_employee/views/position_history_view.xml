@@ -15,7 +15,7 @@
           <t t-name="empty">
             <div class="alert alert-info text-center m-3">
               <div class="mb-2">
-                <i class="fa fa-info-circle fa-2x"></i>
+                <i class="fa fa-info-circle fa-2x" title="None History"></i>
               </div>
               <h6>ยังไม่มีประวัติการทำงาน</h6>
               <small class="text-muted">เพิ่มข้อมูลประวัติการทำงานของพนักงานท่านนี้</small>
@@ -28,8 +28,9 @@
               <div class="position-absolute top-0 end-0">
                 <a type="delete"
                   class="btn btn-sm text-danger oe_kanban_action oe_kanban_action_delete"
+                  role="button"
                   title="Delete">
-                  <i class="fa fa-trash"/>
+                  <i class="fa fa-trash" title="Delete History"/>
                 </a>
               </div>
               <!-- Dot + Line -->
@@ -51,7 +52,7 @@
                   </t>
                   <t t-else="">
                     <span class="text-warning fst-italic">
-                      <i class="fa fa-exclamation-triangle me-1"></i>
+                      <i class="fa fa-exclamation-triangle me-1" title="None Postions"></i>
                       ไม่ได้ระบุตำแหน่งงาน
                     </span>
                   </t>

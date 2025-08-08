@@ -99,14 +99,26 @@ class HrPersonalCardExtract(models.Model):
 
     @staticmethod   
     def scan_id_card(image_path):
-        text_md = ocr_document(image_path, task_type="default", page_num=1)
+        text_md = ocr_document(
+            image_path,  base_url="http://localhost:11434/v1",
+            api_key="sk-Mt83qPXTLlk25KJHBhpaBYm35ghgqsLGU0CetBZy3h7RRhGG",
+            model="scb10x/typhoon-ocr-3b",
+            page_num=1
+        )
         text = text_md.replace("\n", " ").replace("#", "").strip()
 
-        thai_name_pattern = r"([ก-๙]{2,}\s[ก-๙]{2,})"
+        thai_fullname = None
+        match = re.search(r"ชื่อตัวและชื่อสกุล[:\-]?\s*(.+?)(?=\s{2,}|วันเกิด|เกิดวันที่|วันออกบัตร|$)", text)
+        if match:
+            thai_fullname = match.group(1).strip()
+
+        # เผื่อไว้กรณี match ไม่เจอ
+        thai_name_pattern = r"(นางสาว|นาง|นาย)\s[ก-๙]+\s[ก-๙]+(?:\s[ก-๙]+)?"
         thai_names = re.findall(thai_name_pattern, text)
 
         return {
             "raw_text": text,
+            "thai_fullname": thai_fullname,
             "thai_names": thai_names,
         }
 
@@ -126,7 +138,7 @@ class HrPersonalCardExtract(models.Model):
             result = self.scan_id_card(temp_path)
 
             text = result.get("raw_text", "")
-            thai_names = result.get("thai_names", [])
+            thai_names = result.get("thai_fullname")
 
             print("text = ", text)         
             print("thai_names = ", thai_names)
@@ -142,22 +154,7 @@ class HrPersonalCardExtract(models.Model):
             id_number = id_match.group(0)
             self.identification_id_encrypted = self._get_or_create_fernet().encrypt(id_number.encode()).decode()
 
-            # จับชื่ออังกฤษ: อนุญาตช่องว่าง, dot, comma
-            name_match = re.search(
-                r"Name\s*[:-]\s*([A-Za-z.,\- ]+?)(?=\s{2,}|Last name|เกิดวันที่|Date of Birth)", 
-                text, flags=re.IGNORECASE | re.DOTALL
-            )
-
-            lastname_match = re.search(
-                r"Last name\s*[:-]\s*([A-Za-z.,\- ]+?)(?=\s{2,}|เกิดวันที่|Date of Birth|ที่อยู่|$)",
-                text, flags=re.IGNORECASE | re.DOTALL
-            )
-
-            if name_match and lastname_match:
-                full_name_en = (name_match.group(1).strip() + " " + lastname_match.group(1).strip())
-                self.name = " ".join(full_name_en.split())  # ลบช่องว่างเกิน
-            elif thai_names:
-                self.name = thai_names[0]
+            self.name = thai_names.strip().rstrip("-").strip()
 
             # จับที่อยู่ด้วยหลายรูปแบบ
             address = ''
