@@ -16,6 +16,7 @@
         'views/skill_certification_view.xml',
         'wizard/hr_retirement_report_wizard_views.xml',
         'views/employee_wizard_print.xml',
+        'data/employee_sequence.xml',
     ],
     'assets': {
         'web.assets_backend': [

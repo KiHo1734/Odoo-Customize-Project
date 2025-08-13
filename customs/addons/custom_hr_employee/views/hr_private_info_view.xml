@@ -1,6 +1,6 @@
 <odoo>
-  <record id="view_employee_form_inherit_id_card" model="ir.ui.view">
-    <field name="name">hr.employee.form.inherit.id.card</field>
+  <record id="view_employee_form_private_info" model="ir.ui.view">
+    <field name="name">hr.employee.form.private.info</field>
     <field name="model">hr.employee</field>
     <field name="inherit_id" ref="hr.view_employee_form"/>
     <field name="arch" type="xml">
@@ -10,6 +10,12 @@
       </xpath>
       <xpath expr="//field[@name='country_of_birth']" position="after">
         <field name="religion"/>
+      </xpath>
+      <xpath expr="//field[@name='private_car_plate']" position="before">
+        <field name="travel_method"/>
+      </xpath>
+      <xpath expr="//field[@name='private_car_plate']" position="replace">
+        <field name="private_car_plate" invisible="not show_private_car_plate"/>
       </xpath>
     </field>
   </record>

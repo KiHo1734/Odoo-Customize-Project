@@ -15,10 +15,10 @@
           <t t-name="empty">
             <div class="alert alert-info text-center m-3">
               <div class="mb-2">
-                <i class="fa fa-info-circle fa-2x" title="None History"></i>
+                <i class="fa fa-info-circle fa-2x" t-att-title="_('None History')"/>
               </div>
-              <h6>ยังไม่มีประวัติการทำงาน</h6>
-              <small class="text-muted">เพิ่มข้อมูลประวัติการทำงานของพนักงานท่านนี้</small>
+              <h6 t-esc="_('ยังไม่มีประวัติการทำงาน')"/>
+              <small class="text-muted" t-esc="_('เพิ่มข้อมูลประวัติการทำงานของพนักงานท่านนี้')"/>
             </div>
           </t>
           
@@ -27,9 +27,9 @@
               <!-- ปุ่มลบ -->
               <div class="position-absolute top-0 end-0">
                 <a type="delete"
-                  class="btn btn-sm text-danger oe_kanban_action oe_kanban_action_delete"
-                  role="button"
-                  title="Delete">
+                   class="btn btn-sm text-danger oe_kanban_action oe_kanban_action_delete"
+                   role="button"
+                   title="Delete">
                   <i class="fa fa-trash" title="Delete History"/>
                 </a>
               </div>
@@ -42,7 +42,7 @@
                 <div class="text-muted fw-bold" style="font-size: 13px;">
                   <t t-esc="record.start_date.value"/> – 
                   <t t-if="record.end_date"><t t-esc="record.end_date.value"/></t>
-                  <t t-if="!record.end_date">Current</t>
+                  <t t-if="!record.end_date"><t t-esc="_('Current')"/></t>
                 </div>
                 
                 <!-- แสดง Job หรือข้อความแจ้งเตือน -->
@@ -52,8 +52,8 @@
                   </t>
                   <t t-else="">
                     <span class="text-warning fst-italic">
-                      <i class="fa fa-exclamation-triangle me-1" title="None Postions"></i>
-                      ไม่ได้ระบุตำแหน่งงาน
+                      <i class="fa fa-exclamation-triangle me-1" t-att-title="_('None Positions')"/>
+                      <t t-esc="_('ไม่ได้ระบุตำแหน่งงาน')"/>
                     </span>
                   </t>
                 </div>
@@ -63,7 +63,7 @@
                     <t t-esc="record.department_id.value"/>
                   </t>
                   <t t-else="">
-                    <span class="text-muted fst-italic">ไม่ได้ระบุแผนก</span>
+                    <span class="text-muted fst-italic" t-esc="_('ไม่ได้ระบุแผนก')"/>
                   </t>
                 </div>
               </div>

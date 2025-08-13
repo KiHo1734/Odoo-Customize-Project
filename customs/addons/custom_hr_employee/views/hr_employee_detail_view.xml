@@ -35,6 +35,9 @@
                     />
                 </page>
             </xpath>
+            <xpath expr="//field[@name='department_id']" position="before">
+                <field name="employee_code" readonly="1"/>
+            </xpath>
         </field>
     </record>
 </odoo>
