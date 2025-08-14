@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="public_kiosk_mode_custom" inherit_id="hr_attendance.public_kiosk_mode">
+        <xpath expr="//body" position="inside">
+            <div class="o_hr_kiosk_mode_bottom d-flex flex-column flex-md-row gap-2 align-items-center justify-content-between my-5" 
+                style="position: fixed; bottom: 12.50%; left: 1.50%; z-index: 1000;"
+            >
+                <button type="button" class="btn btn-light btn-lg rounded-3" 
+                    style="display: flex; align-items: center" 
+                    onclick="openCamera()"
+                >
+                    <i class="fa fa-camera me-2"></i>
+                    <span>Face Reconize</span>
+                </button>
+                <div class="mt-4">
+                <video id="camera_preview" autoplay="autoplay" 
+                    style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 2000;">
+                </video>
+                </div>
+            </div>
+
+            <script type="text/javascript">
+                function openCamera() {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(function(stream) {
+                            const video = document.getElementById('camera_preview');
+                            video.srcObject = stream;
+                            video.style.display = 'block';
+                            video.play();
+                        })
+                        .catch(function(err) {
+                            alert("ไม่สามารถเปิดกล้องได้: " + err);
+                        });
+                }
+            </script>
+
+            <style>
+                .camera-button {
+                    min-width: 270px;
+                    border: 2px solid #000000; 
+                    border-radius: 15px;
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+                    transition: all 0.3s;
+                    font-size: 24px;
+                    font-weight: bold;
+                    background-color: #ffffff;  
+                    color: #000000;            
+                }
+                
+                .camera-button:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+                    background-color: #f0f0f0; 
+                    color: #000000;            
+                }
+
+                .camera-button:active {
+                    transform: translateY(-1px);
+                }
+            </style>
+        </xpath>
+    </template>
+</odoo>
