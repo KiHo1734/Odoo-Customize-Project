@@ -1,0 +1,19 @@
+<odoo>
+    <record id="view_hr_employee_form_face_recognition" model="ir.ui.view">
+        <field name="name">hr.employee.form.custom.hr.attendance</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/notebook" position="inside">
+                <page string="Face Data">
+                    <group>
+                        <field name="image_1920"/>
+                        <field name="face_encoding" widget="text" readonly="1"/>
+                        <button name="action_regenerate_face_encodings" string="Regenerate Encoding" type="object" class="btn-primary"/>
+                        <p class="text-muted">Encoding will regenerate automatically when the photo changes.</p>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
