@@ -113,8 +113,8 @@ class HrEmployee(models.Model):
                 rec.days_left_to_retire = "-"
 
     # วันขาด และ วันลา จาก custom_attedances module
-    absent_days = fields.Integer(string="Absent Days", compute="_compute_attendance_stats", store=True)
-    leave_days = fields.Integer(string="Leave Days", compute="_compute_attendance_stats", store=True)
+    # absent_days = fields.Integer(string="Absent Days", compute="_compute_attendance_stats", store=True)
+    # leave_days = fields.Integer(string="Leave Days", compute="_compute_attendance_stats", store=True)
     
     # ส่วนที่ใช้สำหรับจัด Suffix Id ของพนักงาน
     employee_code = fields.Char(string="Employee Code", readonly=True, copy=False)

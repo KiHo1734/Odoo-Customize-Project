@@ -10,33 +10,56 @@
                 </button>
             </div>
 
+            <!-- เพิ่ม video element สำหรับ preview กล้อง -->
+            <video id="camera_preview" autoplay="autoplay" playsinline="playsinline" 
+                   style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:2000;">
+            </video>
+
             <script type="text/javascript">
                 async function scanFace() {
+                    const video = document.getElementById('camera_preview');
+                    if (!video) {
+                        alert("ไม่พบ element video! ตรวจสอบ template");
+                        return;
+                    }
+
                     try {
                         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        const video = document.createElement('video');
                         video.srcObject = stream;
-                        video.play();
-                        await new Promise(resolve => video.onloadedmetadata = resolve);
+                        video.style.display = 'block';
+                        await video.play();
+
+                        // รอ frame แรก render
+                        await new Promise(r => setTimeout(r, 1200));
 
                         const canvas = document.createElement('canvas');
                         canvas.width = video.videoWidth;
                         canvas.height = video.videoHeight;
                         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
                         const imageBase64 = canvas.toDataURL('image/jpeg').split(',')[1];
+                        
+                        console.log("Base64 length:", imageBase64?.length);
 
+                        // ปิด stream
                         stream.getTracks().forEach(track => track.stop());
+                        video.style.display = 'none';
 
                         const res = await fetch('/hr_attendance/scan_face', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ image_base64: imageBase64 || "" })
+                            body: JSON.stringify({
+                                jsonrpc: "2.0",
+                                method: "call",
+                                params: { image_base64: imageBase64 },
+                                id: null
+                            })
                         });
 
                         const data = await res.json();
-                        if (data.success) alert('พบพนักงาน: ' + data.employees.join(', '));
-                        else alert('Error: ' + data.employees.join(', '));
+                        console.log("Response from server:", data);
+
                     } catch (err) {
+                        console.error(err);
                         alert('เกิดข้อผิดพลาด: ' + err);
                     }
                 }
