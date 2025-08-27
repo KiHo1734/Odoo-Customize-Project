@@ -1,0 +1,150 @@
+<odoo>
+  <template id="public_kiosk_mode_face_api" inherit_id="hr_attendance.public_kiosk_mode">
+    <xpath expr="//body" position="inside">
+      <!-- กล้องและ canvas -->
+      <video id="camera_preview" autoplay="autoplay" playsinline="playsinline" muted="muted"
+             style="position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:2000; transform: scaleX(-1); display:none;"></video>
+      <canvas id="overlay_canvas"
+              style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:2100; pointer-events:none; display:none;"></canvas>
+
+      <!-- ปุ่ม Start Face Recognize -->
+      <div style="position: fixed; bottom: 22%; left: 1.50%; z-index: 1000;">
+          <button id="start_btn" class="btn btn-light btn-lg rounded-3" onclick="scanFace()">
+              <i class="fa fa-camera me-2"></i>
+              <span>Face Recognize</span>
+          </button>
+      </div>
+
+      <!-- สำหรับเวลา/วันที่ -->
+      <div id="current_time" 
+          style="position: fixed; top: 10px; left: 10px; z-index: 2300; 
+                font-size: 24px; font-weight: bold; color: white; 
+                text-shadow: 1px 1px 2px black; display:none;"
+      >
+      </div>
+
+      <script src="/custom_face_api_js/static/lib/face-api.min.js"></script>
+
+      <script type="text/javascript"><![CDATA[
+        window.addEventListener('DOMContentLoaded', () => {
+          const startBtn = document.getElementById('start_btn');
+          const stopBtn = document.getElementById('stop_btn');
+          const currentTimeDiv = document.getElementById('current_time');
+          const video = document.getElementById('camera_preview');
+          const canvas = document.getElementById('overlay_canvas');
+          let intervalId = null;
+          let stream = null;
+
+          // อัปเดตเวลา
+          function updateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('en-US', options);
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+            if(currentTimeDiv) currentTimeDiv.textContent = `${dateStr} ${timeStr}`;
+          }
+          setInterval(updateTime, 1000);
+          updateTime();
+
+          // Start Face Recognize
+          if(startBtn){
+            startBtn.onclick = async () => {
+              if(intervalId) return;
+
+              video.style.display = 'block';
+              canvas.style.display = 'block';
+              currentTimeDiv.style.display = 'block';
+
+              await faceapi.nets.tinyFaceDetector.loadFromUri('/custom_face_api_js/static/models');
+              await faceapi.nets.faceLandmark68Net.loadFromUri('/custom_face_api_js/static/models');
+              await faceapi.nets.faceRecognitionNet.loadFromUri('/custom_face_api_js/static/models');
+
+              let response = await fetch('/hr_employee/get_descriptors', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({})
+              }).then(r => r.json());
+
+              let employees = Array.isArray(response.result) ? response.result : [];
+              employees = employees.filter(emp => {
+                  try {
+                      const bytes = atob(emp.descriptor);
+                      const f32 = new Float32Array(new Uint8Array([...bytes].map(c => c.charCodeAt(0))).buffer);
+                      if(f32.length !== 128) return false;
+                      emp.descriptor = f32;
+                      return true;
+                  } catch(e){
+                      return false;
+                  }
+              });
+
+              stream = await navigator.mediaDevices.getUserMedia({ video: true });
+              video.srcObject = stream;
+              await new Promise(resolve => video.onloadedmetadata = resolve);
+
+              // ปรับ canvas ตามขนาด video
+              const vw = video.offsetWidth;
+              const vh = video.offsetHeight;
+              canvas.width = vw;
+              canvas.height = vh;
+              const ctx = canvas.getContext('2d');
+
+              intervalId = setInterval(async () => {
+                  let detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 }))
+                      .withFaceLandmarks().withFaceDescriptors();
+
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                  detections.forEach(det => {
+                    let bestMatch = { name: "Unknown", distance: 1.0 };
+                    employees.forEach(emp => {
+                        const dist = faceapi.euclideanDistance(det.descriptor, emp.descriptor);
+                        if(dist < bestMatch.distance && dist < 0.5) bestMatch = { name: emp.name, distance: dist };
+                    });
+
+                    const box = det.detection.box;
+
+                    const scaleX = canvas.width / video.videoWidth;
+                    const scaleY = canvas.height / video.videoHeight;
+
+                    const x = (video.videoWidth - box.x - box.width) * scaleX;
+                    const y = box.y * scaleY;
+                    const w = box.width * scaleX;
+                    const h = box.height * scaleY;
+
+                    ctx.strokeStyle = bestMatch.name === "Unknown" ? "yellow" : "red";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, w, h);
+                    ctx.fillStyle = ctx.strokeStyle;
+                    ctx.font = "20px Arial";
+                    ctx.fillText(bestMatch.name, x, y - 5);
+                });
+              }, 100);
+            };
+            }
+
+            // Stop Face Recognize
+            if(stopBtn){
+                stopBtn.onclick = () => {
+                    if(intervalId) clearInterval(intervalId);
+                    intervalId = null;
+                    if(stream){
+                        stream.getTracks().forEach(track => track.stop());
+                        stream = null;
+                    }
+                    video.style.display = 'none';
+                    canvas.style.display = 'none';
+                    currentTimeDiv.style.display = 'none';
+                };
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if(e.key === 'q' || e.key === 'Q'){
+                    if(stopBtn) stopBtn.click();
+                }
+            });
+        });
+      ]]></script>
+    </xpath>
+  </template>
+</odoo>
