@@ -87,6 +87,14 @@
             canvas.height = video.offsetHeight;
             const ctx = canvas.getContext('2d');
 
+            let workHours = await fetch('/hr_attendance/get_work_hours', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({})
+            }).then(r => r.json());
+            const workStartHour = workHours.work_start;
+            const workEndHour = workHours.work_end;
+
             intervalId = setInterval(async () => {
                 const detections = await faceapi.detectAllFaces
                 (
@@ -96,7 +104,7 @@
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 const now = new Date();
-                const action = now.getHours() >= 17 ? 'check_out' : 'check_in';
+                const action = now.getHours() >= workEndHour ? 'check_out' : 'check_in';
 
                 for(const det of detections){
                     let bestMatch = { name: "Unknown", distance: 1.0, id: null };
@@ -147,7 +155,7 @@
                       } 
                     }
                 }
-            }, 1000);
+            }, 100);
           };
         });
       ]]></script>

@@ -24,8 +24,14 @@ class HREmployeeAPI(http.Controller):
             return {'success': False, 'error': 'Missing employee_id or action'}
 
         now = datetime.now()
-        work_start = time(8, 0)
-        work_end = time(17, 0)
+        # ดึงค่า parameter จาก system
+        params = request.env['ir.config_parameter'].sudo()
+        work_start_hour = float(params.get_param('hr_attendance.work_start', 8.0))
+        work_end_hour = float(params.get_param('hr_attendance.work_end', 17.0))
+
+        # แปลง float เป็นเวลา
+        work_start = time(int(work_start_hour), int((work_start_hour % 1) * 60))
+        work_end = time(int(work_end_hour), int((work_end_hour % 1) * 60))
 
         employee = request.env['hr.employee'].sudo().browse(int(employee_id))
         if not employee.exists():
@@ -44,9 +50,9 @@ class HREmployeeAPI(http.Controller):
             if not existing:
                 Attendance.create({'employee_id': employee.id, 'check_in': now})
 
-        elif action >= 'check_out':
+        elif action == 'check_out':
             # เช็คเอาต์ได้หลัง 17:00
-            if now.time() < work_end:
+            if now.time() >= work_end:
                 return {'success': False, 'error': 'Check-out allowed only after 17:00'}
             attendance = Attendance.search([
                 ('employee_id','=', employee.id),
@@ -56,3 +62,11 @@ class HREmployeeAPI(http.Controller):
                 attendance.write({'check_out': now})
 
         return {'success': True}
+
+    @http.route('/hr_attendance/get_work_hours', type='json', auth='public', methods=['POST'])
+    def get_work_hours(self):
+        params = request.env['ir.config_parameter'].sudo()
+        work_start_hour = float(params.get_param('hr_attendance.work_start', 8.0))
+        work_end_hour = float(params.get_param('hr_attendance.work_end', 17.0))
+        return {'work_start': work_start_hour, 'work_end': work_end_hour}
+

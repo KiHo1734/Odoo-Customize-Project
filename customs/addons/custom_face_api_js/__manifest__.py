@@ -11,6 +11,7 @@
     ],
     "data": [
         "views/kiosk_camera_scan.xml",
+        "views/hr_attendance_settings_views.xml",
     ],
     "external_dependencies": {
         "python": ["face_recognition", "cv2", "numpy", "Pillow"]
