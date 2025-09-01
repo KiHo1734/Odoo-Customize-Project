@@ -40,8 +40,8 @@ class HREmployeeAPI(http.Controller):
         Attendance = request.env['hr.attendance'].sudo()
 
         if action == 'check_in':
-            if now.time() >= work_start:
-                return {'success': False, 'error': 'Check-in allowed after 08:00'}
+            if now.time() == work_start:
+                return {'success': False, 'error': f'Check-in allowed after {work_start.strftime("%H:%M")}'}
             existing = Attendance.search([
                 ('employee_id', '=', employee.id),
                 ('check_in', '>=', now.replace(hour=0, minute=0, second=0, microsecond=0)),
@@ -53,7 +53,7 @@ class HREmployeeAPI(http.Controller):
         elif action == 'check_out':
             # เช็คเอาต์ได้หลัง 17:00
             if now.time() >= work_end:
-                return {'success': False, 'error': 'Check-out allowed only after 17:00'}
+                return {'success': False, 'error': f'Check-out allowed only after {work_end.strftime("%H:%M")}'}
             attendance = Attendance.search([
                 ('employee_id','=', employee.id),
                 ('check_out','=', False)
