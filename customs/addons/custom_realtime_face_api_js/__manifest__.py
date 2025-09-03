@@ -1,5 +1,5 @@
 {
-    "name": "HR Face API JS",
+    "name": "HR Realtime Face API JS",
     "version": "1.0",
     "summary": "Face Recognition Attendance System with Kiosk Mode by using FaceAPI-JS",
     "category": "Human Resources",
@@ -11,6 +11,7 @@
     ],
     "data": [
         "views/kiosk_camera_scan.xml",
+        "views/hr_attendance_settings_views.xml",
     ],
     "external_dependencies": {
         "python": ["face_recognition", "cv2", "numpy", "Pillow"]
@@ -19,7 +20,7 @@
     "application": False,
     "auto_install": False,
     "description": """
-        Custom Face API JS (Kiosk Mode)
+        Custom Realtime Face API JS (Kiosk Mode)
         ============================================
 
         This module integrates face-api.js for real-time face detection and recognition in kiosk-style attendance.

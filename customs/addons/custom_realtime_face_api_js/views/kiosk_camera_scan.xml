@@ -1,0 +1,164 @@
+<odoo>
+  <template id="public_kiosk_mode_face_api" inherit_id="hr_attendance.public_kiosk_mode">
+    <xpath expr="//body" position="inside">
+      <!-- กล้องและ canvas -->
+      <video id="camera_preview" autoplay="autoplay" playsinline="playsinline" muted="muted"
+             style="position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:2000; transform: scaleX(-1); display:none;"></video>
+      <canvas id="overlay_canvas"
+              style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:2100; pointer-events:none; display:none;"></canvas>
+
+      <!-- ปุ่ม Start Face Recognize -->
+      <div style="position: fixed; bottom: 22%; left: 1.5%; z-index: 1000;">
+          <button id="start_btn" class="btn btn-light btn-lg rounded-3">
+              <i class="fa fa-camera me-2"></i>
+              <span>Face Recognize</span>
+          </button>
+      </div>
+
+      <!-- เวลา/วันที่ -->
+      <div id="current_time" 
+           style="position: fixed; top: 10px; left: 10px; z-index: 2300; 
+                  font-size: 24px; font-weight: bold; color: white; 
+                  text-shadow: 1px 1px 2px black; display:none;">
+      </div>
+
+      <script src="/custom_face_api_js/static/lib/face-api.min.js"></script>
+
+      <script type="text/javascript"><![CDATA[
+        window.addEventListener('DOMContentLoaded', () => {
+          const startBtn = document.getElementById('start_btn');
+          const currentTimeDiv = document.getElementById('current_time');
+          const video = document.getElementById('camera_preview');
+          const canvas = document.getElementById('overlay_canvas');
+          let intervalId = null;
+          let stream = null;
+          const lastSent = {}; // throttle
+
+          // อัปเดตเวลา
+          function updateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('en-US', options);
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+            currentTimeDiv.textContent = `${dateStr} ${timeStr}`;
+          }
+          setInterval(updateTime, 1000);
+          updateTime();
+
+          startBtn.onclick = async () => {
+            if(intervalId) return;
+
+            video.style.display = 'block';
+            canvas.style.display = 'block';
+            currentTimeDiv.style.display = 'block';
+
+            // โหลด models
+            await faceapi.nets.tinyFaceDetector.loadFromUri('/custom_face_api_js/static/models');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('/custom_face_api_js/static/models');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('/custom_face_api_js/static/models');
+
+            // ดึง descriptors
+            let response = await fetch('/hr_employee/get_descriptors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            }).then(r => r.json());
+
+            let employees = Array.isArray(response.result) ? response.result : [];
+            employees = employees.filter(emp => {
+                try {
+                    const bytes = atob(emp.descriptor);
+                    const f32 = new Float32Array(new Uint8Array([...bytes].map(c => c.charCodeAt(0))).buffer);
+                    if(f32.length !== 128) return false;
+                    emp.descriptor = f32;
+                    return true;
+                } catch(e){
+                    console.error("Descriptor decode error:", e, emp);
+                    return false;
+                }
+            });
+
+            // เปิดกล้อง
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            await new Promise(resolve => video.onloadedmetadata = resolve);
+
+            canvas.width = video.offsetWidth;
+            canvas.height = video.offsetHeight;
+            const ctx = canvas.getContext('2d');
+
+            let workHours = await fetch('/hr_attendance/get_work_hours', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({})
+            }).then(r => r.json());
+            const workStartHour = workHours.work_start;
+            const workEndHour = workHours.work_end;
+
+            intervalId = setInterval(async () => {
+                const detections = await faceapi.detectAllFaces
+                (
+                  video, 
+                  new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 })
+                ).withFaceLandmarks().withFaceDescriptors();
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const now = new Date();
+                const action = now.getHours() >= workEndHour ? 'check_out' : 'check_in';
+
+                for(const det of detections){
+                    let bestMatch = { name: "Unknown", distance: 1.0, id: null };
+                    for(const emp of employees){
+                        const dist = faceapi.euclideanDistance(det.descriptor, emp.descriptor);
+                        if(dist < bestMatch.distance && dist < 0.5){
+                            bestMatch = { name: emp.name, distance: dist, id: emp.id };
+                        }
+                    }
+
+                    // วาดกรอบ
+                    const box = det.detection.box;
+                    const scaleX = canvas.width / video.videoWidth;
+                    const scaleY = canvas.height / video.videoHeight;
+                    const x = (video.videoWidth - box.x - box.width) * scaleX;
+                    const y = box.y * scaleY;
+                    const w = box.width * scaleX;
+                    const h = box.height * scaleY;
+
+                    ctx.strokeStyle = bestMatch.name === "Unknown" ? "yellow" : "red";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, w, h);
+                    ctx.fillStyle = ctx.strokeStyle;
+                    ctx.font = "20px Arial";
+                    ctx.fillText(bestMatch.name, x, y - 5);
+
+                    // ส่ง API (throttle 60 วินาที)
+                    if(bestMatch.id){
+                      const key = `${bestMatch.id}_${action}`;
+                      if(!lastSent[key] || now - lastSent[key] > 60000){
+                        try{
+                          const res = await fetch('/hr_attendance/face_check', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                jsonrpc: "2.0",
+                                method: "call",
+                                params: { employee_id: bestMatch.id, action: action },
+                                id: new Date().getTime()
+                            })
+                          });
+                            const data = await res.json();
+                            console.log("✅ Attendance API response:", data);
+                            lastSent[key] = new Date();
+                        } catch(err){
+                            console.error("❌ Attendance API error:", err);
+                        }
+                      } 
+                    }
+                }
+            }, 100);
+          };
+        });
+      ]]></script>
+    </xpath>
+  </template>
+</odoo>

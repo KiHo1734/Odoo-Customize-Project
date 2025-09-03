@@ -18,65 +18,85 @@ class HREmployeeAPI(http.Controller):
     @http.route('/hr_attendance/face_check', type='json', auth='public', methods=['POST'], csrf=False)
     def face_check(self, **kwargs):
         employee_id = kwargs.get('employee_id')
-        action = kwargs.get('action')
-
-        if not employee_id or not action:
-            return {'success': False, 'error': 'Missing employee_id or action'}
+        
+        if not employee_id:
+            return {'success': False, 'message': 'Missing employee information'}
 
         now = datetime.now()
-        params = request.env['ir.config_parameter'].sudo()
-        work_start_hour = float(params.get_param('hr_attendance.work_start', 8.0))
-        work_end_hour = float(params.get_param('hr_attendance.work_end', 17.0))
+        employee = request.env['hr.employee'].sudo().browse(int(employee_id))
+        if not employee.exists():
+            return {'success': False, 'message': 'Employee not found'}
 
-        work_start = time(int(work_start_hour), int((work_start_hour % 1) * 60))
-        work_end = time(int(work_end_hour), int((work_end_hour % 1) * 60))
+        Attendance = request.env['hr.attendance'].sudo()
+        
+        # หา attendance ล่าสุดของวันนี้
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_attendance = Attendance.search([
+            ('employee_id', '=', employee.id),
+            ('check_in', '>=', today_start)
+        ], order="check_in desc", limit=1)
+        
+        # ตรวจสอบสถานะปัจจุบัน
+        if not today_attendance:
+            # ยังไม่มี attendance วันนี้ -> Check In
+            Attendance.create({
+                'employee_id': employee.id, 
+                'check_in': now
+            })
+            return {
+                'success': True, 
+                'message': f'Good morning, {employee.name}! Check-in recorded at {now.strftime("%H:%M")}',
+                'action': 'check_in'
+            }
+        
+        elif not today_attendance.check_out:
+            # มี check_in แล้วแต่ยังไม่ check_out -> Check Out
+            
+            # คำนวณระยะเวลาทำงาน
+            work_duration = now - today_attendance.check_in
+            hours_worked = work_duration.total_seconds() / 3600
+            
+            today_attendance.write({'check_out': now})
+            return {
+                'success': True, 
+                'message': f'Goodbye, {employee.name}! Check-out recorded at {now.strftime("%H:%M")}. Worked {hours_worked:.1f} hours.',
+                'action': 'check_out'
+            }
+        
+        else:
+            # มี check_in และ check_out แล้ว -> ไม่อนุญาต
+            return {
+                'success': False, 
+                'message': f'{employee.name}, you have already completed attendance for today.',
+                'action': 'already_completed'
+            }
+
+    @http.route('/hr_attendance/get_employee_info', type='json', auth='public', methods=['POST'], csrf=False)
+    def get_employee_info(self, **kwargs):
+        employee_id = kwargs.get('employee_id')
+        if not employee_id:
+            return {'success': False, 'error': 'Missing employee_id'}
 
         employee = request.env['hr.employee'].sudo().browse(int(employee_id))
         if not employee.exists():
             return {'success': False, 'error': 'Employee not found'}
 
         Attendance = request.env['hr.attendance'].sudo()
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        att = Attendance.search([
+            ('employee_id', '=', employee.id), 
+            ('check_in', '>=', today)
+        ], limit=1)
 
-        if action == 'check_in':
-            # หา attendance ค้าง (ยังไม่ check-out)
-            last_attendance = Attendance.search([
-                ('employee_id', '=', employee.id),
-                ('check_out', '=', False)
-            ], order="check_in desc", limit=1)
-
-            if last_attendance:
-                last_checkin_date = last_attendance.check_in.date()
-                today = now.date()
-                if last_checkin_date < today:
-                    # ปิด attendance ของวันก่อนหน้าอัตโนมัติ
-                    last_attendance.write({'check_out': datetime.combine(last_checkin_date, time(23, 59, 59))})
-
-            # ตรวจสอบว่ามี check-in ของวันปัจจุบันหรือยัง
-            existing_today = Attendance.search([
-                ('employee_id', '=', employee.id),
-                ('check_in', '>=', now.replace(hour=0, minute=0, second=0, microsecond=0)),
-                ('check_out', '=', False)
-            ], limit=1)
-
-            if not existing_today:
-                Attendance.create({'employee_id': employee.id, 'check_in': now})
-
-        elif action == 'check_out':
-            if now.time() < work_end:
-                return {'success': False, 'error': f'Check-out allowed only after {work_end.strftime("%H:%M")}'}
-
-            attendance = Attendance.search([
-                ('employee_id', '=', employee.id),
-                ('check_out', '=', False)
-            ], limit=1)
-            if attendance:
-                attendance.write({'check_out': now})
-
-        return {'success': True}
-
-    @http.route('/hr_attendance/get_work_hours', type='json', auth='public', methods=['POST'])
-    def get_work_hours(self):
-        params = request.env['ir.config_parameter'].sudo()
-        work_start_hour = float(params.get_param('hr_attendance.work_start', 8.0))
-        work_end_hour = float(params.get_param('hr_attendance.work_end', 17.0))
-        return {'work_start': work_start_hour, 'work_end': work_end_hour}
+        return {
+            'success': True,
+            'employee': {
+                'id': employee.id,
+                'name': employee.name,
+                'attendance': {
+                    'check_in': att.check_in.strftime('%H:%M:%S') if att and att.check_in else None,
+                    'check_out': att.check_out.strftime('%H:%M:%S') if att and att.check_out else None,
+                    'status': 'checked_out' if att and att.check_out else ('checked_in' if att else 'not_started')
+                }
+            }
+        }
