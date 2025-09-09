@@ -1,7 +1,7 @@
-from datetime import date
 from odoo import models, fields, api, _
+from datetime import date, timedelta, datetime, time
 from dateutil.relativedelta import relativedelta
-from datetime import timedelta
+import calendar as py_calendar
 
 class HrEmployee(models.Model):
     _inherit = 'hr.employee'
@@ -108,13 +108,9 @@ class HrEmployee(models.Model):
         for rec in self:
             if rec.retirement_date:
                 diff = relativedelta(rec.retirement_date, today)
-                rec.days_left_to_retire = f"{diff.years} ปี {diff.months} เดือน"
+                rec.days_left_to_retire = f"{diff.years} ปี {diff.months} เดือน {diff.days} วัน"
             else:
                 rec.days_left_to_retire = "-"
-
-    # วันขาด และ วันลา จาก custom_attedances module
-    # absent_days = fields.Integer(string="Absent Days", compute="_compute_attendance_stats", store=True)
-    # leave_days = fields.Integer(string="Leave Days", compute="_compute_attendance_stats", store=True)
     
     # ส่วนที่ใช้สำหรับจัด Suffix Id ของพนักงาน
     employee_code = fields.Char(string="Employee Code", readonly=True, copy=False)
@@ -144,3 +140,76 @@ class HrEmployee(models.Model):
     def _compute_show_private_car_plate(self):
         for rec in self:
             rec.show_private_car_plate = (rec.travel_method == 'private_car')
+
+    # วันขาด และ วันลา จาก custom_attedances module
+    total_leave_days = fields.Integer(
+        string="Total Leave Days",
+        compute="_compute_leave_days",
+    )
+    total_absence_days = fields.Integer(
+        string="Total Absence Days",
+        compute="_compute_absence_days",
+    )
+        
+    # ส่วน HrEmployee
+    def _compute_leave_days(self, start_date=None, end_date=None):
+        for employee in self:
+            # ถ้าไม่ส่ง start/end ให้ใช้ค่า default
+            start_date = start_date or employee.start_date
+            end_date = end_date or date.today()
+            if not start_date:
+                employee.total_leave_days = 0
+                continue
+
+            leaves = self.env['hr.leave'].search([
+                ('employee_id', '=', employee.id),
+                ('state', '=', 'validate'),
+                ('request_date_from', '<=', end_date),
+                ('request_date_to', '>=', start_date),
+            ])
+            employee.total_leave_days = sum(l.number_of_days for l in leaves)
+
+    def _compute_absence_days(self, start_date=None, end_date=None):
+        for employee in self:
+            start_date = start_date or employee.start_date
+            end_date = end_date or date.today()
+            if not start_date or not employee.resource_calendar_id or not employee.resource_id:
+                employee.total_absence_days = 0
+                continue
+
+            calendar = employee.resource_calendar_id
+            start_dt = fields.Datetime.context_timestamp(self, datetime.combine(start_date, time.min))
+            end_dt = fields.Datetime.context_timestamp(self, datetime.combine(end_date, time.max))
+
+            intervals_map = calendar._work_intervals_batch(start_dt, end_dt, resources=employee.resource_id)
+            work_intervals = intervals_map.get(employee.resource_id.id, [])
+
+            work_days = len(set(interval[0].date() for interval in work_intervals))
+
+            # วันลา
+            leaves = self.env['hr.leave'].search([
+                ('employee_id', '=', employee.id),
+                ('state', '=', 'validate'),
+                ('request_date_from', '<=', end_date),
+                ('request_date_to', '>=', start_date),
+            ])
+            leave_days = sum(l.number_of_days for l in leaves)
+
+            # วันมาทำงานจริง
+            attendances = self.env['hr.attendance'].search([
+                ('employee_id', '=', employee.id),
+                ('check_in', '>=', start_dt),
+                ('check_in', '<=', end_dt)
+            ])
+            present_days = len(set(att.check_in.date() for att in attendances))
+
+            absence_days = work_days - leave_days - present_days
+            employee.total_absence_days = max(absence_days, 0)
+
+    @api.model
+    def cron_update_leave_absence(self):
+        """Cron job daily to update leave and absence counts"""
+        employees = self.search([])
+        for emp in employees:
+            emp._compute_leave_days()
+            emp._compute_absence_days()

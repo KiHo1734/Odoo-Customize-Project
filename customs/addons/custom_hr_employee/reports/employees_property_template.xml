@@ -54,8 +54,8 @@
                   <td><t t-esc="employee.days_left_to_retire or '-'"/></td>
                   <td><t t-esc="'{:,.2f}'.format(employee.salary or 0.0)"/></td>
                   <td><t t-esc="'{:,.2f}'.format((employee.salary or 0.0) * 12)"/></td>
-                  <td><t t-esc="employee.absent_days"/></td> 
-                  <td><t t-esc="employee.leave_days"/></td> 
+                  <td><t t-esc="employee.total_absence_days"/></td> 
+                  <td><t t-esc="employee.total_leave_days"/></td> 
                 </tr>
               </t>
             </tbody>

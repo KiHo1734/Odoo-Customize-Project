@@ -1,4 +1,4 @@
-from odoo import models, fields
+from odoo import api, models, fields
 
 class HrRetirementReportWizard(models.TransientModel):
     _name = 'hr.retirement.report.wizard'
@@ -34,6 +34,27 @@ class HrRetirementReportWizard(models.TransientModel):
         }
         
         return self.env.ref('custom_hr_employee.action_report_retirement_employee_list').report_action(self, data=data)
+    
+    @api.model
+    def _get_report_values(self, docids, data=None):
+        if data and data.get('form'):
+            employee_ids = self.env['hr.employee'].browse(data.get('form', {}).get('employee_ids', []))
+        else:
+            employee_ids = self.env['hr.employee'].browse(docids)
+
+        # อัปเดต leave และ absence ก่อน render
+        # ก่อนส่งรายงาน
+        for emp in employee_ids:
+            emp._compute_leave_days(start_date=self.date_from, end_date=self.date_to)
+            emp._compute_absence_days(start_date=self.date_from, end_date=self.date_to)
+
+        return {
+            'doc_ids': employee_ids.ids,
+            'doc_model': 'hr.employee',
+            'docs': employee_ids,
+            'form': data.get('form', {}) if data else {},
+            'employee_ids': employee_ids,
+        }
 
 class ReportRetirementEmployeeList(models.AbstractModel):
     _name = 'report.custom_hr_employee.report_employee_list_template'
