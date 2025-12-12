@@ -101,7 +101,6 @@ class HrPersonalCardExtract(models.Model):
     def scan_id_card(image_path):
         text_md = ocr_document(
             image_path,  base_url="http://localhost:11434/v1",
-            api_key="sk-Mt83qPXTLlk25KJHBhpaBYm35ghgqsLGU0CetBZy3h7RRhGG",
             model="scb10x/typhoon-ocr-3b",
             page_num=1
         )
@@ -112,7 +111,6 @@ class HrPersonalCardExtract(models.Model):
         if match:
             thai_fullname = match.group(1).strip()
 
-        # เผื่อไว้กรณี match ไม่เจอ
         thai_name_pattern = r"(นางสาว|นาง|นาย)\s[ก-๙]+\s[ก-๙]+(?:\s[ก-๙]+)?"
         thai_names = re.findall(thai_name_pattern, text)
 
