@@ -4,22 +4,20 @@
     <style>
       .page { padding-top: 0 !important; }
     </style>
-
     <t t-set="o" t-value="docs[0]"/>
-
     <!-- เรียก layout -->
     <t t-call="web.external_layout">
       <main class="page">
         <h2 class="text-center">Employee Skills by Department</h2>
-
         <p>
           รายงานนี้สรุปทักษะของพนักงานแต่ละคน แบ่งตามแผนก ประเภท และระดับความสามารถ
           (พิมพ์เมื่อ: <t t-esc="datetime.datetime.today().strftime('%d/%m/%Y')"/>)
         </p>
-
         <!-- ดึง department ที่มีพนักงานใน docs -->
-        <t t-set="departments" t-value="docs.mapped('employee_id.department_id').filtered(lambda d: d).sorted(key=lambda d: d.name)"/>
-        
+        <t 
+          t-set="departments" 
+          t-value="docs.mapped('employee_id.department_id').filtered(lambda d: d).sorted(key=lambda d: d.name)"
+        />
         <t t-foreach="departments" t-as="department">
           <h3 class="mt16"><t t-esc="department.name"/></h3>
 
@@ -60,3 +58,4 @@
     </t>
   </template>
 </odoo>
+
