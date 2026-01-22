@@ -1,337 +1,337 @@
-<odoo>
-  <template id="public_kiosk_mode_face_api" inherit_id="hr_attendance.public_kiosk_mode">
-    <xpath expr="//body" position="inside">
-      <!-- กล้องและ canvas -->
-      <video id="camera_preview" autoplay="autoplay" playsinline="playsinline" muted="muted"
-             style="position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:2000; transform: scaleX(-1); display:none;"></video>
-      <canvas id="overlay_canvas"
-              style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:2100; pointer-events:none; display:none;"></canvas>
+  <odoo>
+    <template id="public_kiosk_mode_face_api" inherit_id="hr_attendance.public_kiosk_mode">
+      <xpath expr="//body" position="inside">
+        <!-- กล้องและ canvas -->
+        <video id="camera_preview" autoplay="autoplay" playsinline="playsinline" muted="muted"
+              style="position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:2000; transform: scaleX(-1); display:none;"></video>
+        <canvas id="overlay_canvas"
+                style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:2100; pointer-events:none; display:none;"></canvas>
 
-      <!-- ปุ่ม Start Face Recognize -->
-      <div style="position: fixed; bottom: 26%; left: 1.5%; z-index: 1000;">
-          <button id="start_btn" class="btn btn-light btn-lg rounded-3">
-              <i class="fa fa-camera me-2"></i>
-              <span>Face Recognize</span>
-          </button>
-      </div>
+        <!-- ปุ่ม Start Face Recognize -->
+        <div style="position: fixed; bottom: 26%; left: 1.5%; z-index: 1000;">
+            <button id="start_btn" class="btn btn-light btn-lg rounded-3">
+                <i class="fa fa-camera me-2"></i>
+                <span>Face Recognize</span>
+            </button>
+        </div>
 
-      <!-- ปุ่ม Cancel -->
-      <div id="cancel_btn_container" style="position: fixed; bottom: 22%; right: 1.5%; z-index: 1000; display:none;">
-          <button id="cancel_btn" class="btn btn-danger btn-lg rounded-3">
-              <i class="fa fa-times me-2"></i>
-              <span>Cancel</span>
-          </button>
-      </div>
+        <!-- ปุ่ม Cancel -->
+        <div id="cancel_btn_container" style="position: fixed; bottom: 22%; right: 1.5%; z-index: 1000; display:none;">
+            <button id="cancel_btn" class="btn btn-danger btn-lg rounded-3">
+                <i class="fa fa-times me-2"></i>
+                <span>Cancel</span>
+            </button>
+        </div>
 
-      <!-- เวลา/วันที่ -->
-      <div id="current_time" 
-           style="position: fixed; top: 10px; left: 10px; z-index: 2300; 
-                  font-size: 24px; font-weight: bold; color: white; 
-                  text-shadow: 1px 1px 2px black; display:none;">
-      </div>
+        <!-- เวลา/วันที่ -->
+        <div id="current_time" 
+            style="position: fixed; top: 10px; left: 10px; z-index: 2300; 
+                    font-size: 24px; font-weight: bold; color: white; 
+                    text-shadow: 1px 1px 2px black; display:none;">
+        </div>
 
-      <!-- Status Message -->
-      <div id="status_message" 
-           style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-                  z-index: 2400; background: rgba(0,0,0,0.8); color: white; 
-                  padding: 20px; border-radius: 10px; font-size: 18px; 
-                  text-align: center; display:none;">
-      </div>
+        <!-- Status Message -->
+        <div id="status_message" 
+            style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                    z-index: 2400; background: rgba(0,0,0,0.8); color: white; 
+                    padding: 20px; border-radius: 10px; font-size: 18px; 
+                    text-align: center; display:none;">
+        </div>
 
-      <!-- Popup Modal -->
-      <div id="attendance_popup" 
-           style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-                  background: rgba(0,0,0,0.8); z-index: 3000; display: none;
-                  justify-content: center; align-items: center;">
-          <div style="background: white; border-radius: 15px; padding: 30px; 
-                      max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-              
-              <!-- Employee Photo -->
-              <div id="employee_photo" style="margin-bottom: 20px;">
-                  <i class="fa fa-user-circle" style="font-size: 80px; color: #007bff;"></i>
-              </div>
-              
-              <!-- Employee Name -->
-              <h3 id="employee_name" style="margin-bottom: 10px; color: #333;">-</h3>
-              
-              <!-- Action Type -->
-              <h4 id="action_type" style="margin-bottom: 20px; color: #28a745;">-</h4>
-              
-              <!-- Time -->
-              <p id="attendance_time" style="font-size: 18px; margin-bottom: 20px; color: #666;">-</p>
-              
-              <!-- Status -->
-              <div id="attendance_status" style="margin-bottom: 30px; padding: 15px; border-radius: 8px;">
-                  <p style="margin: 0; font-size: 16px; font-weight: bold;">-</p>
-              </div>
-              
-              <!-- Buttons -->
-              <div>
-                  <button id="confirm_btn" class="btn btn-success btn-lg mb-2">
-                      <i class="fa fa-check me-2"></i>Confirm
-                  </button>
-                  <button id="retry_btn" class="btn btn-secondary btn-lg">
-                      <i class="fa fa-redo me-2"></i>Try Again
-                  </button>
-              </div>
-          </div>
-      </div>
+        <!-- Popup Modal -->
+        <div id="attendance_popup" 
+            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                    background: rgba(0,0,0,0.8); z-index: 3000; display: none;
+                    justify-content: center; align-items: center;">
+            <div style="background: white; border-radius: 15px; padding: 30px; 
+                        max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                
+                <!-- Employee Photo -->
+                <div id="employee_photo" style="margin-bottom: 20px;">
+                    <i class="fa fa-user-circle" style="font-size: 80px; color: #007bff;"></i>
+                </div>
+                
+                <!-- Employee Name -->
+                <h3 id="employee_name" style="margin-bottom: 10px; color: #333;">-</h3>
+                
+                <!-- Action Type -->
+                <h4 id="action_type" style="margin-bottom: 20px; color: #28a745;">-</h4>
+                
+                <!-- Time -->
+                <p id="attendance_time" style="font-size: 18px; margin-bottom: 20px; color: #666;">-</p>
+                
+                <!-- Status -->
+                <div id="attendance_status" style="margin-bottom: 30px; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0; font-size: 16px; font-weight: bold;">-</p>
+                </div>
+                
+                <!-- Buttons -->
+                <div>
+                    <button id="confirm_btn" class="btn btn-success btn-lg mb-2">
+                        <i class="fa fa-check me-2"></i>Confirm
+                    </button>
+                    <button id="retry_btn" class="btn btn-secondary btn-lg">
+                        <i class="fa fa-redo me-2"></i>Try Again
+                    </button>
+                </div>
+            </div>
+        </div>
 
-      <script src="/custom_face_api_js/static/lib/face-api.min.js"></script>
+        <script src="/custom_face_api_js/static/lib/face-api.min.js"></script>
 
-    <script type="text/javascript"><![CDATA[
-window.addEventListener('DOMContentLoaded', () => {
-  const startBtn = document.getElementById('start_btn');
-  const cancelBtn = document.getElementById('cancel_btn');
-  const cancelBtnContainer = document.getElementById('cancel_btn_container');
-  const currentTimeDiv = document.getElementById('current_time');
-  const statusMessage = document.getElementById('status_message');
-  const video = document.getElementById('camera_preview');
-  const canvas = document.getElementById('overlay_canvas');
-  const popup = document.getElementById('attendance_popup');
-  const confirmBtn = document.getElementById('confirm_btn');
-  const retryBtn = document.getElementById('retry_btn');
+      <script type="text/javascript"><![CDATA[
+        window.addEventListener('DOMContentLoaded', () => {
+          const startBtn = document.getElementById('start_btn');
+          const cancelBtn = document.getElementById('cancel_btn');
+          const cancelBtnContainer = document.getElementById('cancel_btn_container');
+          const currentTimeDiv = document.getElementById('current_time');
+          const statusMessage = document.getElementById('status_message');
+          const video = document.getElementById('camera_preview');
+          const canvas = document.getElementById('overlay_canvas');
+          const popup = document.getElementById('attendance_popup');
+          const confirmBtn = document.getElementById('confirm_btn');
+          const retryBtn = document.getElementById('retry_btn');
 
-  let intervalId = null;
-  let stream = null;
-  let employees = [];
-  let isProcessing = false;
-  let matchedEmployee = null;
+          let intervalId = null;
+          let stream = null;
+          let employees = [];
+          let isProcessing = false;
+          let matchedEmployee = null;
 
-  // อัปเดตเวลา
-  function updateTime() {
-    const now = new Date();
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    const dateStr = now.toLocaleDateString('en-US', options);
-    const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
-    currentTimeDiv.textContent = `${dateStr} ${timeStr}`;
-  }
-  setInterval(updateTime, 1000);
-  updateTime();
+          // อัปเดตเวลา
+          function updateTime() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateStr = now.toLocaleDateString('en-US', options);
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+            currentTimeDiv.textContent = `${dateStr} ${timeStr}`;
+          }
+          setInterval(updateTime, 1000);
+          updateTime();
 
-  function showStatus(message) {
-    statusMessage.textContent = message;
-    statusMessage.style.display = 'block';
-  }
+          function showStatus(message) {
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+          }
 
-  function hideStatus() {
-    statusMessage.style.display = 'none';
-  }
+          function hideStatus() {
+            statusMessage.style.display = 'none';
+          }
 
-  function stopCamera() {
-    if (intervalId) {
-      clearInterval(intervalId);
-      intervalId = null;
-    }
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      stream = null;
-    }
-    video.srcObject = null;
-    video.style.display = 'none';
-    canvas.style.display = 'none';
-    currentTimeDiv.style.display = 'none';
-    cancelBtnContainer.style.display = 'none';
-    hideStatus();
-    isProcessing = false;
-  }
-
-  function showAttendancePopupPreview(employee) {
-    const now = new Date();
-    document.getElementById('employee_name').textContent = employee.name;
-    document.getElementById('action_type').textContent = 'ATTENDANCE';
-    document.getElementById('attendance_time').textContent = now.toLocaleString();
-
-    const statusDiv = document.getElementById('attendance_status');
-    statusDiv.innerHTML = `<p style="margin: 0; font-size: 16px; font-weight: bold;">Ready to confirm attendance</p>`;
-    statusDiv.style.backgroundColor = '#fff3cd';
-    statusDiv.style.color = '#856404';
-    statusDiv.style.border = '1px solid #ffeeba';
-
-    popup.style.display = 'flex';
-    stopCamera();
-  }
-
-  async function processAttendance(employee) {
-    try {
-      showStatus('Processing attendance...');
-
-      const res = await fetch('/hr_attendance/face_check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          method: "call",
-          params: { employee_id: employee.id },
-          id: new Date().getTime()
-        })
-      });
-
-      const data = await res.json();
-      console.log("Attendance API response:", data);
-
-      const success = data.result && data.result.success;
-      const message = data.result?.message || (success ? 'Attendance recorded successfully!' : 'Failed to record attendance');
-
-      // แสดง popup สรุป
-      const statusDiv = document.getElementById('attendance_status');
-      if(success){
-        document.getElementById('action_type').style.color = '#28a745';
-        statusDiv.style.backgroundColor = '#d4edda';
-        statusDiv.style.color = '#155724';
-        statusDiv.style.border = '1px solid #c3e6cb';
-      } else {
-        document.getElementById('action_type').style.color = '#dc3545';
-        statusDiv.style.backgroundColor = '#f8d7da';
-        statusDiv.style.color = '#721c24';
-        statusDiv.style.border = '1px solid #f5c6cb';
-      }
-      statusDiv.innerHTML = `<p style="margin:0;font-size:16px;font-weight:bold;">${message}</p>`;
-      popup.style.display = 'flex';
-      hideStatus();
-
-    } catch (err) {
-      console.error("Attendance API error:", err);
-      showStatus('Connection error. Please try again.');
-    }
-  }
-
-  startBtn.onclick = async () => {
-    if(intervalId || isProcessing) return;
-
-    try {
-      isProcessing = true;
-      showStatus('Loading face recognition models...');
-
-      video.style.display = 'block';
-      canvas.style.display = 'block';
-      currentTimeDiv.style.display = 'block';
-      cancelBtnContainer.style.display = 'block';
-
-      // โหลด models
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/custom_face_api_js/static/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('/custom_face_api_js/static/models');
-      await faceapi.nets.faceRecognitionNet.loadFromUri('/custom_face_api_js/static/models');
-
-      showStatus('Loading employee data...');
-
-      // ดึง descriptors
-      let response = await fetch('/hr_employee/get_descriptors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      }).then(r => r.json());
-
-      employees = Array.isArray(response.result) ? response.result : [];
-      employees = employees.filter(emp => {
-        try {
-          const bytes = atob(emp.descriptor);
-          const f32 = new Float32Array(new Uint8Array([...bytes].map(c => c.charCodeAt(0))).buffer);
-          if(f32.length !== 128) return false;
-          emp.descriptor = f32;
-          return true;
-        } catch(e){
-          console.error("Descriptor decode error:", e, emp);
-          return false;
-        }
-      });
-
-      showStatus('Starting camera...');
-
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
-      await new Promise(resolve => video.onloadedmetadata = resolve);
-
-      canvas.width = video.offsetWidth;
-      canvas.height = video.offsetHeight;
-      const ctx = canvas.getContext('2d');
-
-      isProcessing = false;
-      hideStatus();
-
-      intervalId = setInterval(async () => {
-        try {
-          const detections = await faceapi.detectAllFaces(
-            video,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 })
-          ).withFaceLandmarks().withFaceDescriptors();
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-          if (detections.length > 0) {
-            const det = detections[0];
-            let bestMatch = { name: "Unknown", distance: 1.0, id: null };
-
-            for(const emp of employees){
-              const dist = faceapi.euclideanDistance(det.descriptor, emp.descriptor);
-              if(dist < bestMatch.distance && dist < 0.5){
-                bestMatch = { name: emp.name, distance: dist, id: emp.id };
-              }
-            }
-
-            // วาดกรอบ
-            const box = det.detection.box;
-            const scaleX = canvas.width / video.videoWidth;
-            const scaleY = canvas.height / video.videoHeight;
-            const x = (video.videoWidth - box.x - box.width) * scaleX;
-            const y = box.y * scaleY;
-            const w = box.width * scaleX;
-            const h = box.height * scaleY;
-
-            ctx.strokeStyle = bestMatch.name === "Unknown" ? "yellow" : "lime";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(x, y, w, h);
-            ctx.fillStyle = ctx.strokeStyle;
-            ctx.font = "20px Arial";
-            ctx.fillText(bestMatch.name, x, y - 10);
-
-            if(bestMatch.name === "Unknown"){
-              showStatus('Unknown face detected. Please try again.');
-            } else {
-              showStatus(`Found: ${bestMatch.name}. Ready to confirm.`);
-            }
-
-            if(bestMatch.id && bestMatch.name !== "Unknown" && !isProcessing){
-              isProcessing = true;
+          function stopCamera() {
+            if (intervalId) {
               clearInterval(intervalId);
               intervalId = null;
-              matchedEmployee = { id: bestMatch.id, name: bestMatch.name };
-              showAttendancePopupPreview(matchedEmployee);
             }
-
+            if (stream) {
+              stream.getTracks().forEach(track => track.stop());
+              stream = null;
+            }
+            video.srcObject = null;
+            video.style.display = 'none';
+            canvas.style.display = 'none';
+            currentTimeDiv.style.display = 'none';
+            cancelBtnContainer.style.display = 'none';
+            hideStatus();
+            isProcessing = false;
           }
-        } catch(error) {
-          console.error('Detection error:', error);
-          showStatus('Detection error. Please try again.');
-        }
-      }, 300);
 
-    } catch (error) {
-      console.error('Error starting face recognition:', error);
-      showStatus('Error: ' + error.message);
-      stopCamera();
-    }
-  };
+          function showAttendancePopupPreview(employee) {
+            const now = new Date();
+            document.getElementById('employee_name').textContent = employee.name;
+            document.getElementById('action_type').textContent = 'ATTENDANCE';
+            document.getElementById('attendance_time').textContent = now.toLocaleString();
 
-  cancelBtn.onclick = () => stopCamera();
+            const statusDiv = document.getElementById('attendance_status');
+            statusDiv.innerHTML = `<p style="margin: 0; font-size: 16px; font-weight: bold;">Ready to confirm attendance</p>`;
+            statusDiv.style.backgroundColor = '#fff3cd';
+            statusDiv.style.color = '#856404';
+            statusDiv.style.border = '1px solid #ffeeba';
 
-  confirmBtn.onclick = async () => {
-    if(matchedEmployee){
-      await processAttendance(matchedEmployee);
-      matchedEmployee = null;
-    }
-    popup.style.display = 'none';
-  };
+            popup.style.display = 'flex';
+            stopCamera();
+          }
 
-  retryBtn.onclick = () => {
-    popup.style.display = 'none';
-    matchedEmployee = null;
-    startBtn.click();
-  };
+          async function processAttendance(employee) {
+            try {
+              showStatus('Processing attendance...');
 
-});
-]]></script>
+              const res = await fetch('/hr_attendance/face_check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  jsonrpc: "2.0",
+                  method: "call",
+                  params: { employee_id: employee.id },
+                  id: new Date().getTime()
+                })
+              });
 
-    </xpath>
-  </template>
-</odoo>
+              const data = await res.json();
+              console.log("Attendance API response:", data);
+
+              const success = data.result && data.result.success;
+              const message = data.result?.message || (success ? 'Attendance recorded successfully!' : 'Failed to record attendance');
+
+              // แสดง popup สรุป
+              const statusDiv = document.getElementById('attendance_status');
+              if(success){
+                document.getElementById('action_type').style.color = '#28a745';
+                statusDiv.style.backgroundColor = '#d4edda';
+                statusDiv.style.color = '#155724';
+                statusDiv.style.border = '1px solid #c3e6cb';
+              } else {
+                document.getElementById('action_type').style.color = '#dc3545';
+                statusDiv.style.backgroundColor = '#f8d7da';
+                statusDiv.style.color = '#721c24';
+                statusDiv.style.border = '1px solid #f5c6cb';
+              }
+              statusDiv.innerHTML = `<p style="margin:0;font-size:16px;font-weight:bold;">${message}</p>`;
+              popup.style.display = 'flex';
+              hideStatus();
+
+            } catch (err) {
+              console.error("Attendance API error:", err);
+              showStatus('Connection error. Please try again.');
+            }
+          }
+
+          startBtn.onclick = async () => {
+            if(intervalId || isProcessing) return;
+
+            try {
+              isProcessing = true;
+              showStatus('Loading face recognition models...');
+
+              video.style.display = 'block';
+              canvas.style.display = 'block';
+              currentTimeDiv.style.display = 'block';
+              cancelBtnContainer.style.display = 'block';
+
+              // โหลด models
+              await faceapi.nets.tinyFaceDetector.loadFromUri('/custom_face_api_js/static/models');
+              await faceapi.nets.faceLandmark68Net.loadFromUri('/custom_face_api_js/static/models');
+              await faceapi.nets.faceRecognitionNet.loadFromUri('/custom_face_api_js/static/models');
+
+              showStatus('Loading employee data...');
+
+              // ดึง descriptors
+              let response = await fetch('/hr_employee/get_descriptors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+              }).then(r => r.json());
+
+              employees = Array.isArray(response.result) ? response.result : [];
+              employees = employees.filter(emp => {
+                try {
+                  const bytes = atob(emp.descriptor);
+                  const f32 = new Float32Array(new Uint8Array([...bytes].map(c => c.charCodeAt(0))).buffer);
+                  if(f32.length !== 128) return false;
+                  emp.descriptor = f32;
+                  return true;
+                } catch(e){
+                  console.error("Descriptor decode error:", e, emp);
+                  return false;
+                }
+              });
+
+              showStatus('Starting camera...');
+
+              stream = await navigator.mediaDevices.getUserMedia({ video: true });
+              video.srcObject = stream;
+              await new Promise(resolve => video.onloadedmetadata = resolve);
+
+              canvas.width = video.offsetWidth;
+              canvas.height = video.offsetHeight;
+              const ctx = canvas.getContext('2d');
+
+              isProcessing = false;
+              hideStatus();
+
+              intervalId = setInterval(async () => {
+                try {
+                  const detections = await faceapi.detectAllFaces(
+                    video,
+                    new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 })
+                  ).withFaceLandmarks().withFaceDescriptors();
+
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                  if (detections.length > 0) {
+                    const det = detections[0];
+                    let bestMatch = { name: "Unknown", distance: 1.0, id: null };
+
+                    for(const emp of employees){
+                      const dist = faceapi.euclideanDistance(det.descriptor, emp.descriptor);
+                      if(dist < bestMatch.distance && dist < 0.5){
+                        bestMatch = { name: emp.name, distance: dist, id: emp.id };
+                      }
+                    }
+
+                    // วาดกรอบ
+                    const box = det.detection.box;
+                    const scaleX = canvas.width / video.videoWidth;
+                    const scaleY = canvas.height / video.videoHeight;
+                    const x = (video.videoWidth - box.x - box.width) * scaleX;
+                    const y = box.y * scaleY;
+                    const w = box.width * scaleX;
+                    const h = box.height * scaleY;
+
+                    ctx.strokeStyle = bestMatch.name === "Unknown" ? "yellow" : "lime";
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(x, y, w, h);
+                    ctx.fillStyle = ctx.strokeStyle;
+                    ctx.font = "20px Arial";
+                    ctx.fillText(bestMatch.name, x, y - 10);
+
+                    if(bestMatch.name === "Unknown"){
+                      showStatus('Unknown face detected. Please try again.');
+                    } else {
+                      showStatus(`Found: ${bestMatch.name}. Ready to confirm.`);
+                    }
+
+                    if(bestMatch.id && bestMatch.name !== "Unknown" && !isProcessing){
+                      isProcessing = true;
+                      clearInterval(intervalId);
+                      intervalId = null;
+                      matchedEmployee = { id: bestMatch.id, name: bestMatch.name };
+                      showAttendancePopupPreview(matchedEmployee);
+                    }
+
+                  }
+                } catch(error) {
+                  console.error('Detection error:', error);
+                  showStatus('Detection error. Please try again.');
+                }
+              }, 300);
+
+            } catch (error) {
+              console.error('Error starting face recognition:', error);
+              showStatus('Error: ' + error.message);
+              stopCamera();
+            }
+          };
+
+          cancelBtn.onclick = () => stopCamera();
+
+          confirmBtn.onclick = async () => {
+            if(matchedEmployee){
+              await processAttendance(matchedEmployee);
+              matchedEmployee = null;
+            }
+            popup.style.display = 'none';
+          };
+
+          retryBtn.onclick = () => {
+            popup.style.display = 'none';
+            matchedEmployee = null;
+            startBtn.click();
+          };
+
+        });
+        ]]>
+      </script>
+      </xpath>
+    </template>
+  </odoo>
