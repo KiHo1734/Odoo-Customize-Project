@@ -1,7 +1,7 @@
 {
-    "name": "HR Face API JS",
+    "name": "HR Anti Spoof Face Scan",
     "version": "1.0",
-    "summary": "Face Recognition Attendance System with Kiosk Mode by using FaceAPI-JS",
+    "summary": "Face Recognition Attendance System with Kiosk Mode by using mediapie and silent face spoofing",
     "category": "Human Resources",
     "depends": [
         "base",
@@ -19,16 +19,15 @@
     "application": False,
     "auto_install": False,
     "description": """
-        Custom Face API JS (Kiosk Mode)
+        Custom HR Anti Spoof Face Scan (Kiosk Mode)
         ============================================
 
-        This module integrates face-api.js for real-time face detection and recognition in kiosk-style attendance.
+        This module integrates mediapie and silent face spoofing for real-time face detection and recognition in kiosk-style attendance.
 
         Assets and resources:
-        - face-api.js library is loaded from `static/lib/face-api.min.js`.
-        - Models (tinyFaceDetector, face_landmark_68, face_recognition) must be placed under `static/models/`.
+        - Silent-Face-Anti-Spoofing library is loaded from `customs\addons\custom_face_anti_spoofing\static\lib\Silent-Face-Anti-Spoofing-master`.
 
         Development and reference:
-        - Official face-api.js repository: https://github.com/justadudewhohacks/face-api.js :contentReference[oaicite:0]{index=0}
+        - Silent-Face-Anti-Spoofing repository: https://github.com/minivision-ai/Silent-Face-Anti-Spoofing :contentReference[oaicite:0]{index=0}
     """,
 }

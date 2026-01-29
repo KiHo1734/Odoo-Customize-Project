@@ -97,6 +97,8 @@
           let employees = [];
           let isProcessing = false;
           let matchedEmployee = null;
+          let challengePassed = true;
+          let capturedImage = null;
 
           // อัปเดตเวลา
           function updateTime() {
@@ -148,6 +150,7 @@
             statusDiv.style.color = '#856404';
             statusDiv.style.border = '1px solid #ffeeba';
 
+            capturedImage = captureCurrentFrame(); 
             popup.style.display = 'flex';
             stopCamera();
           }
@@ -156,35 +159,51 @@
             try {
               showStatus('Processing attendance...');
 
+              const imageBase64 = capturedImage;
+
+
               const res = await fetch('/hr_attendance/face_check', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  jsonrpc: "2.0",
-                  method: "call",
-                  params: { employee_id: employee.id },
-                  id: new Date().getTime()
+                  employee_id: employee.id,
+                  image: imageBase64,
+                  challenge_passed: challengePassed
                 })
               });
 
               const data = await res.json();
               console.log("Attendance API response:", data);
 
+              const result = data.result || data;
+
+              // แสกนหน้าแล้ว Liveness fail → ให้สแกนหน้าใหม่
+              if (!result.success) {
+
+                popup.style.display = 'none';    
+                showStatus('❌ Liveness check failed. Please scan your face again.');
+
+                setTimeout(() => {
+                  hideStatus();
+                  startBtn.click();            
+                }, 1500);
+
+                return; 
+              }
+
               const success = data.result && data.result.success;
               const message = data.result?.message || (success ? 'Attendance recorded successfully!' : 'Failed to record attendance');
 
               // แสดง popup สรุป
               const statusDiv = document.getElementById('attendance_status');
-              if(success){
+              if (success) {
                 document.getElementById('action_type').style.color = '#28a745';
                 statusDiv.style.backgroundColor = '#d4edda';
                 statusDiv.style.color = '#155724';
-                statusDiv.style.border = '1px solid #c3e6cb';
               } else {
                 document.getElementById('action_type').style.color = '#dc3545';
                 statusDiv.style.backgroundColor = '#f8d7da';
                 statusDiv.style.color = '#721c24';
-                statusDiv.style.border = '1px solid #f5c6cb';
               }
               statusDiv.innerHTML = `<p style="margin:0;font-size:16px;font-weight:bold;">${message}</p>`;
               popup.style.display = 'flex';
@@ -329,8 +348,16 @@
             startBtn.click();
           };
 
+          function captureCurrentFrame() {
+            const captureCanvas = document.createElement('canvas');
+            captureCanvas.width = video.videoWidth;
+            captureCanvas.height = video.videoHeight;
+            const ctx = captureCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            return captureCanvas.toDataURL('image/jpeg');
+          }
         });
-        ]]>
+      ]]>
       </script>
       </xpath>
     </template>

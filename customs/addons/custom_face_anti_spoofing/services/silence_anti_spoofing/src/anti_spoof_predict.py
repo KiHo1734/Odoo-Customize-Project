@@ -13,9 +13,9 @@ import numpy as np
 import torch.nn.functional as F
 
 
-from src.model_lib.MiniFASNet import MiniFASNetV1, MiniFASNetV2,MiniFASNetV1SE,MiniFASNetV2SE
-from src.data_io import transform as trans
-from src.utility import get_kernel, parse_model_name
+from .model_lib.MiniFASNet import MiniFASNetV1, MiniFASNetV2,MiniFASNetV1SE,MiniFASNetV2SE
+from .data_io import transform as trans
+from .utility import get_kernel, parse_model_name
 
 MODEL_MAPPING = {
     'MiniFASNetV1': MiniFASNetV1,
@@ -27,8 +27,22 @@ MODEL_MAPPING = {
 
 class Detection:
     def __init__(self):
-        caffemodel = "./resources/detection_model/Widerface-RetinaFace.caffemodel"
-        deploy = "./resources/detection_model/deploy.prototxt"
+        # anti_spoof_predict.py
+        SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+        BASE_DIR = os.path.abspath(os.path.join(SRC_DIR, ".."))
+        RES_DIR = os.path.join(BASE_DIR, "resources", "detection_model")
+
+        deploy = os.path.join(RES_DIR, "deploy.prototxt")
+        caffemodel = os.path.join(RES_DIR, "Widerface-RetinaFace.caffemodel")
+
+        print("[AntiSpoof] deploy =", deploy)
+        print("[AntiSpoof] caffemodel =", caffemodel)
+
+        if not os.path.exists(deploy):
+            raise FileNotFoundError(deploy)
+        if not os.path.exists(caffemodel):
+            raise FileNotFoundError(caffemodel)
+
         self.detector = cv2.dnn.readNetFromCaffe(deploy, caffemodel)
         self.detector_confidence = 0.6
 

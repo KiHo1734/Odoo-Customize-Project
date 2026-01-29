@@ -1,6 +1,11 @@
+import json
 from odoo import http
 from odoo.http import request
-from datetime import datetime, time, timedelta
+from datetime import datetime
+import base64
+import cv2
+import numpy as np
+from ..services.liveness_service import run_antispoof
 
 class HREmployeeAPI(http.Controller):
     @http.route('/hr_employee/get_descriptors', type='json', auth='public', methods=['POST'])
@@ -15,10 +20,52 @@ class HREmployeeAPI(http.Controller):
             })
         return data
 
-    @http.route('/hr_attendance/face_check', type='json', auth='public', methods=['POST'], csrf=False)
-    def face_check(self, **kwargs):
-        employee_id = kwargs.get('employee_id')
+    @http.route('/hr_attendance/face_check', type='http', auth='public', methods=['POST'], csrf=False)
+    def face_check(self):
+        try:
+            data = json.loads(request.httprequest.data.decode('utf-8'))
+        except Exception:
+            return request.make_json_response({
+                'success': False,
+                'message': 'Invalid JSON body'
+            })
+
+        employee_id = data.get('employee_id')
+        image_base64 = data.get('image')
+        challenge_passed = data.get('challenge_passed')
+
+        if not image_base64:
+            return request.make_json_response({
+                'success': False,
+                'message': 'Missing image'
+            })
+
+        try:
+            img_bytes = base64.b64decode(image_base64.split(',')[1])
+            np_img = np.frombuffer(img_bytes, np.uint8)
+            frame = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+        except Exception:
+            return request.make_json_response({
+                'success': False,
+                'message': 'Invalid image data'
+            })
+
+        # is_real_challenge = check_challenge({"passed": challenge_passed})
+        # if not is_real_challenge:
+        #     return request.make_json_response({
+        #         'success': False,
+        #         'message': 'Challenge failed'
+        #     })
+
+        is_real_face = run_antispoof(frame, None)
+        if not is_real_face:
+            return request.make_json_response({
+                'success': False,
+                'message': 'Liveness check failed'
+            })
+
         
+        #ใช้ตรวจสอบ Id พนังงานว่าตรวจพบหรือไม่ เพื่อทำการ Check IN/OUT การเข้าทำงาน
         if not employee_id:
             return {'success': False, 'message': 'Missing employee information'}
 
@@ -40,36 +87,44 @@ class HREmployeeAPI(http.Controller):
         if not today_attendance:
             # ยังไม่มี attendance วันนี้ -> Check In
             Attendance.create({
-                'employee_id': employee.id, 
+                'employee_id': employee.id,
                 'check_in': now
             })
-            return {
-                'success': True, 
+
+            return request.make_json_response({
+                'success': True,
                 'message': f'Good morning, {employee.name}! Check-in recorded at {now.strftime("%H:%M")}',
-                'action': 'check_in'
-            }
-        
+                'action': 'check_in',
+                'verification': {
+                    # 'challenge_passed': is_real_challenge,
+                    'liveness_passed': is_real_face,
+                }
+            })
+                    
         elif not today_attendance.check_out:
             # มี check_in แล้วแต่ยังไม่ check_out -> Check Out
-            
-            # คำนวณระยะเวลาทำงาน
-            work_duration = now - today_attendance.check_in
-            hours_worked = work_duration.total_seconds() / 3600
-            
             today_attendance.write({'check_out': now})
-            return {
-                'success': True, 
-                'message': f'Goodbye, {employee.name}! Check-out recorded at {now.strftime("%H:%M")}. Worked {hours_worked:.1f} hours.',
-                'action': 'check_out'
-            }
+            return request.make_json_response({
+                'success': True,
+                'message': f'Goodbye, {employee.name}! Check-out recorded at {now.strftime("%H:%M")}.',
+                'action': 'check_out',
+                'verification': {
+                    # 'challenge_passed': is_real_challenge,
+                    'liveness_passed': is_real_face,
+                }
+            })
         
         else:
             # มี check_in และ check_out แล้ว -> ไม่อนุญาต
-            return {
+            return request.make_json_response({
                 'success': False, 
                 'message': f'{employee.name}, you have already completed attendance for today.',
-                'action': 'already_completed'
-            }
+                'action': 'already_completed',
+                'verification': {
+                    # 'challenge_passed': is_real_challenge,
+                    'liveness_passed': is_real_face,
+                }
+            })
 
     @http.route('/hr_attendance/get_employee_info', type='json', auth='public', methods=['POST'], csrf=False)
     def get_employee_info(self, **kwargs):
@@ -100,3 +155,4 @@ class HREmployeeAPI(http.Controller):
                 }
             }
         }
+    
