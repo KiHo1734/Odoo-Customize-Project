@@ -5,7 +5,16 @@
         <video id="camera_preview" autoplay="autoplay" playsinline="playsinline" muted="muted"
               style="position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:2000; transform: scaleX(-1); display:none;"></video>
         <canvas id="overlay_canvas"
-                style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:2100; pointer-events:none; display:none;"></canvas>
+          style="
+            position:fixed;
+            top:0; left:0;
+            width:100vw; height:100vh;
+            z-index:2100;
+            pointer-events:none;
+            transform: scaleX(-1);
+            display:none;
+          ">
+        </canvas>
 
         <!-- ปุ่ม Start Face Recognize -->
         <div style="position: fixed; bottom: 26%; left: 1.5%; z-index: 1000;">
@@ -78,6 +87,9 @@
         </div>
 
         <script src="/custom_face_api_js/static/lib/face-api.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
       <script type="text/javascript"><![CDATA[
         window.addEventListener('DOMContentLoaded', () => {
@@ -86,7 +98,7 @@
           const cancelBtnContainer = document.getElementById('cancel_btn_container');
           const currentTimeDiv = document.getElementById('current_time');
           const statusMessage = document.getElementById('status_message');
-          const video = document.getElementById('camera_preview');
+          let video = document.getElementById('camera_preview');
           const canvas = document.getElementById('overlay_canvas');
           const popup = document.getElementById('attendance_popup');
           const confirmBtn = document.getElementById('confirm_btn');
@@ -97,8 +109,21 @@
           let employees = [];
           let isProcessing = false;
           let matchedEmployee = null;
-          let challengePassed = true;
+          let challengePassed = false;
           let capturedImage = null;
+
+          // MediaPipe Challenge 
+          let faceMesh = null;
+          let mpCamera = null;
+          let challengeIndex = 0;
+          let mediaPipeActive = false;
+
+          const challenges = [
+            { type: 'blink', text: 'Please blink your eyes' },
+            { type: 'mouth', text: 'Please open your mouth' },
+            { type: 'left',  text: 'Turn your head left' },
+            { type: 'right', text: 'Turn your head right' },
+          ];
 
           // อัปเดตเวลา
           function updateTime() {
@@ -149,10 +174,7 @@
             statusDiv.style.backgroundColor = '#fff3cd';
             statusDiv.style.color = '#856404';
             statusDiv.style.border = '1px solid #ffeeba';
-
-            capturedImage = captureCurrentFrame(); 
             popup.style.display = 'flex';
-            stopCamera();
           }
 
           async function processAttendance(employee) {
@@ -160,7 +182,6 @@
               showStatus('Processing attendance...');
 
               const imageBase64 = capturedImage;
-
 
               const res = await fetch('/hr_attendance/face_check', {
                 method: 'POST',
@@ -179,15 +200,8 @@
 
               // แสกนหน้าแล้ว Liveness fail → ให้สแกนหน้าใหม่
               if (!result.success) {
-
                 popup.style.display = 'none';    
-                showStatus('❌ Liveness check failed. Please scan your face again.');
-
-                setTimeout(() => {
-                  hideStatus();
-                  startBtn.click();            
-                }, 1500);
-
+                showStatus('Liveness check failed. Please scan your face again.');
                 return; 
               }
 
@@ -215,7 +229,133 @@
             }
           }
 
+          function onFaceMeshResults(results) {
+            if (!mediaPipeActive) return;
+
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!results.multiFaceLandmarks || !results.multiFaceLandmarks.length) {
+              return;
+            }
+
+            const lm = results.multiFaceLandmarks[0];
+            if (!lm || lm.length < 468) {
+              return;
+            }
+
+            // วาด mesh (กรอบตรวจ depth)
+            drawConnectors(ctx, lm, FACEMESH_TESSELATION,
+              { color: '#00FFFF', lineWidth: 1 });
+        
+            // ===== Landmark ที่ใช้ =====
+            const leftEyeTop = lm[159];
+            const leftEyeBottom = lm[145];
+            const rightEyeTop = lm[386];
+            const rightEyeBottom = lm[374];
+            const mouthTop = lm[13];
+            const mouthBottom = lm[14];
+            const nose = lm[1];
+
+            const blink =
+              Math.abs(leftEyeTop.y - leftEyeBottom.y) < 0.004 &&
+              Math.abs(rightEyeTop.y - rightEyeBottom.y) < 0.004;
+
+            const mouthOpen = Math.abs(mouthTop.y - mouthBottom.y) > 0.03;
+            const MIRRORED = true;
+            const headLeft  = MIRRORED ? nose.x > 0.55 : nose.x < 0.45;
+            const headRight = MIRRORED ? nose.x < 0.45 : nose.x > 0.55;
+
+            const current = challenges[challengeIndex];
+            let ok = false;
+
+            if (current?.type === 'blink') ok = blink;
+            if (current?.type === 'mouth') ok = mouthOpen;
+            if (current?.type === 'left') ok = headLeft;
+            if (current?.type === 'right') ok = headRight;
+
+            // ===== TEXT =====
+            ctx.fillStyle = 'yellow';
+            ctx.font = '26px Arial';
+            ctx.fillText(`Challenge: ${current?.text}`, 20, 40);
+
+            if (ok) {
+              challengeIndex++;
+              if (challengeIndex >= challenges.length) {
+                challengePassed = true;
+
+                ctx.fillStyle = 'lime';
+                ctx.fillText('Challenge Passed', 20, 80);
+
+                stopMediaPipe();
+                stopCamera();
+
+                setTimeout(() => {
+                  startFaceApiIdentify();
+                }, 100); 
+                return;
+              }
+            }
+          }
+
           startBtn.onclick = async () => {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            resetAllState();    
+            video = recreateVideoElement(); 
+
+            showStatus('Starting face challenge...');
+
+            video.style.display = 'block';
+            canvas.style.display = 'block';
+            currentTimeDiv.style.display = 'block';
+            cancelBtnContainer.style.display = 'block';
+
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            video.srcObject = stream;
+            await new Promise(r => video.onloadedmetadata = r);
+
+            initMediaPipeChallenge();  
+          };
+
+          function initMediaPipeChallenge() {
+            mediaPipeActive = true;
+            challengePassed = false;
+            challengeIndex = 0;
+
+            faceMesh = new FaceMesh({
+              locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`,
+            });
+
+            faceMesh.setOptions({
+              maxNumFaces: 1,
+              refineLandmarks: true,
+              minDetectionConfidence: 0.6,
+              minTrackingConfidence: 0.6,
+            });
+
+            faceMesh.onResults(onFaceMeshResults);
+
+            mpCamera = new Camera(video, {
+              onFrame: async () => {
+                if (!mediaPipeActive || !faceMesh) return;
+                await faceMesh.send({ image: video });
+              },
+              width: video.videoWidth,
+              height: video.videoHeight,
+            });
+
+            mpCamera.start();
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            hideStatus();
+            isProcessing = false;
+          }
+
+          async function startFaceApiIdentify() {
             if(intervalId || isProcessing) return;
 
             try {
@@ -261,10 +401,6 @@
               video.srcObject = stream;
               await new Promise(resolve => video.onloadedmetadata = resolve);
 
-              canvas.width = video.offsetWidth;
-              canvas.height = video.offsetHeight;
-              const ctx = canvas.getContext('2d');
-
               isProcessing = false;
               hideStatus();
 
@@ -275,6 +411,7 @@
                     new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 })
                   ).withFaceLandmarks().withFaceDescriptors();
 
+                  const ctx = canvas.getContext('2d');
                   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                   if (detections.length > 0) {
@@ -292,7 +429,7 @@
                     const box = det.detection.box;
                     const scaleX = canvas.width / video.videoWidth;
                     const scaleY = canvas.height / video.videoHeight;
-                    const x = (video.videoWidth - box.x - box.width) * scaleX;
+                    const x = box.x * scaleX;
                     const y = box.y * scaleY;
                     const w = box.width * scaleX;
                     const h = box.height * scaleY;
@@ -315,6 +452,8 @@
                       clearInterval(intervalId);
                       intervalId = null;
                       matchedEmployee = { id: bestMatch.id, name: bestMatch.name };
+                      capturedImage = captureCurrentFrame(); 
+                      stopFaceApiCamera();
                       showAttendancePopupPreview(matchedEmployee);
                     }
 
@@ -327,24 +466,24 @@
 
             } catch (error) {
               console.error('Error starting face recognition:', error);
-              showStatus('Error: ' + error.message);
+              showStatus('Error: ' + error.message);  
               stopCamera();
             }
           };
 
-          cancelBtn.onclick = () => stopCamera();
+          cancelBtn.onclick = () => {
+            resetAllState();
+          };
 
           confirmBtn.onclick = async () => {
-            if(matchedEmployee){
+            if (matchedEmployee) {
               await processAttendance(matchedEmployee);
-              matchedEmployee = null;
             }
-            popup.style.display = 'none';
+            resetAllState();
           };
 
           retryBtn.onclick = () => {
-            popup.style.display = 'none';
-            matchedEmployee = null;
+            resetAllState();
             startBtn.click();
           };
 
@@ -356,6 +495,94 @@
             ctx.drawImage(video, 0, 0);
             return captureCanvas.toDataURL('image/jpeg');
           }
+
+        function stopMediaPipe() {
+          console.log('Stop MediaPipe');
+          mediaPipeActive = false;
+
+          if (mpCamera) {
+            mpCamera.stop();
+            mpCamera = null;
+          }
+
+          if (faceMesh) {
+            faceMesh = null;
+          }
+        }
+
+        function stopFaceApiCamera() {
+          if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+          }
+
+          if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+          }
+
+          video.srcObject = null;
+          video.style.display = 'none';
+          canvas.style.display = 'none';
+          currentTimeDiv.style.display = 'none';
+          cancelBtnContainer.style.display = 'none';
+        }
+
+        function resetAllState() {
+          console.log('Reset all state');
+
+          isProcessing = false;
+          mediaPipeActive = false;
+          challengePassed = false;
+          challengeIndex = 0;
+
+          matchedEmployee = null;
+          capturedImage = null;
+
+          // stop ทุกอย่าง
+          stopMediaPipe();
+          stopFaceApiCamera();
+
+          // reset UI
+          popup.style.display = 'none';
+          hideStatus();
+        }
+
+        function recreateVideoElement() {
+          if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+          }
+
+          if (mpCamera) {
+            mpCamera.stop();
+            mpCamera = null;
+          }
+
+          if (video) {
+            video.pause();
+            video.srcObject = null;
+            video.remove();
+          }
+
+          const newVideo = document.createElement('video');
+          newVideo.id = 'camera_preview';
+          newVideo.autoplay = true;
+          newVideo.playsInline = true;
+          newVideo.muted = true;
+          newVideo.style = `
+            position:fixed;
+            top:0; left:0;
+            width:100vw; height:100vh;
+            object-fit:cover;
+            z-index:2000;
+            transform: scaleX(-1);
+            display:none;
+          `;
+
+          document.body.appendChild(newVideo);
+          return newVideo;
+        }
         });
       ]]>
       </script>

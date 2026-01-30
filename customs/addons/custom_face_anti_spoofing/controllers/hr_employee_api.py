@@ -50,12 +50,12 @@ class HREmployeeAPI(http.Controller):
                 'message': 'Invalid image data'
             })
 
-        # is_real_challenge = check_challenge({"passed": challenge_passed})
-        # if not is_real_challenge:
-        #     return request.make_json_response({
-        #         'success': False,
-        #         'message': 'Challenge failed'
-        #     })
+        is_challenge_passed = challenge_passed
+        if not is_challenge_passed:
+            return request.make_json_response({
+                'success': False,
+                'message': 'Challenge failed'
+            })
 
         is_real_face = run_antispoof(frame, None)
         if not is_real_face:
@@ -96,7 +96,7 @@ class HREmployeeAPI(http.Controller):
                 'message': f'Good morning, {employee.name}! Check-in recorded at {now.strftime("%H:%M")}',
                 'action': 'check_in',
                 'verification': {
-                    # 'challenge_passed': is_real_challenge,
+                    'challenge_passed': is_challenge_passed,
                     'liveness_passed': is_real_face,
                 }
             })
@@ -109,7 +109,7 @@ class HREmployeeAPI(http.Controller):
                 'message': f'Goodbye, {employee.name}! Check-out recorded at {now.strftime("%H:%M")}.',
                 'action': 'check_out',
                 'verification': {
-                    # 'challenge_passed': is_real_challenge,
+                    'challenge_passed': is_challenge_passed,
                     'liveness_passed': is_real_face,
                 }
             })
@@ -121,7 +121,7 @@ class HREmployeeAPI(http.Controller):
                 'message': f'{employee.name}, you have already completed attendance for today.',
                 'action': 'already_completed',
                 'verification': {
-                    # 'challenge_passed': is_real_challenge,
+                    'challenge_passed': is_challenge_passed,
                     'liveness_passed': is_real_face,
                 }
             })
