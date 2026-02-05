@@ -47,6 +47,18 @@
                     text-align: center; display:none;">
         </div>
 
+        <div id="challenge_text"
+          style="
+            position:fixed;
+            top:20px;
+            right:20px;
+            z-index:3000;
+            font-size:26px;
+            color:yellow;
+            text-shadow:1px 1px 3px black;
+          ">
+        </div>
+
         <!-- Popup Modal -->
         <div id="attendance_popup" 
             style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
@@ -258,8 +270,8 @@
             const nose = lm[1];
 
             const blink =
-              Math.abs(leftEyeTop.y - leftEyeBottom.y) < 0.004 &&
-              Math.abs(rightEyeTop.y - rightEyeBottom.y) < 0.004;
+              Math.abs(leftEyeTop.y - leftEyeBottom.y) < 0.01 &&
+              Math.abs(rightEyeTop.y - rightEyeBottom.y) < 0.01;
 
             const mouthOpen = Math.abs(mouthTop.y - mouthBottom.y) > 0.03;
             const MIRRORED = true;
@@ -275,9 +287,7 @@
             if (current?.type === 'right') ok = headRight;
 
             // ===== TEXT =====
-            ctx.fillStyle = 'yellow';
-            ctx.font = '26px Arial';
-            ctx.fillText(`Challenge: ${current?.text}`, 20, 40);
+            document.getElementById('challenge_text').innerText = `Challenge: ${current?.text}`;
 
             if (ok) {
               challengeIndex++;
@@ -287,12 +297,10 @@
                 ctx.fillStyle = 'lime';
                 ctx.fillText('Challenge Passed', 20, 80);
 
-                stopMediaPipe();
-                stopCamera();
-
-                setTimeout(() => {
-                  startFaceApiIdentify();
-                }, 100); 
+                clearOverlay();      // ✅ ลบกรอบ / mesh
+                stopMediaPipe();     // ✅ ปิด MediaPipe
+             
+                startFaceApiIdentify();
                 return;
               }
             }
@@ -582,6 +590,11 @@
 
           document.body.appendChild(newVideo);
           return newVideo;
+        }
+
+        function clearOverlay() {
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
         });
       ]]>
