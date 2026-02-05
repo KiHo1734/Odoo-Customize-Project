@@ -9,6 +9,7 @@ from cryptography.fernet import Fernet
 from PIL import Image
 from typhoon_ocr import ocr_document
 import re
+import easyocr
 
 class HrPersonalCardExtract(models.Model):
     _inherit = 'hr.employee'
@@ -101,7 +102,7 @@ class HrPersonalCardExtract(models.Model):
     def scan_id_card(image_path):
         text_md = ocr_document(
             image_path,  base_url="http://localhost:11434/v1",
-            model="scb10x/typhoon-ocr-3b",
+            model="scb10x/typhoon-ocr1.5-3b",
             page_num=1
         )
         text = text_md.replace("\n", " ").replace("#", "").strip()
@@ -114,9 +115,40 @@ class HrPersonalCardExtract(models.Model):
         thai_name_pattern = r"(นางสาว|นาง|นาย)\s[ก-๙]+\s[ก-๙]+(?:\s[ก-๙]+)?"
         thai_names = re.findall(thai_name_pattern, text)
 
+        eng_fullname = None
+        def normalize_text(text):
+            text = text.replace("\n", " ")
+            text = re.sub(r"\s+", " ", text)
+            return text.strip()
+
+        def extract_en_name(text):
+            text = normalize_text(text)
+
+            first_name = None
+            last_name = None
+
+            # First name: Mr / Mr. / MR
+            m1 = re.search(r"\bMr\.?:?\s*([A-Z][a-z]+)", text)
+            if m1:
+                first_name = m1.group(1)
+
+            # Last name: Last name / Lagt name 
+            m2 = re.search(r"\b(Las[tg]|Lagt)\s*name\s*([A-Z][a-z]+)", text, re.IGNORECASE)
+            if m2:
+                last_name = m2.group(2)
+
+            return first_name, last_name
+
+        reader = easyocr.Reader(['en'], gpu=False)
+        en_result = reader.readtext(image_path)
+        en_text = " ".join([t for _, t, _ in en_result])
+
+        fname, lname = extract_en_name(en_text)
+        eng_fullname =  fname + " " + lname
+
         return {
             "raw_text": text,
-            "thai_fullname": thai_fullname,
+            "thai_fullname": eng_fullname,
             "thai_names": thai_names,
         }
 
@@ -128,7 +160,7 @@ class HrPersonalCardExtract(models.Model):
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as f:
             with Image.open(BytesIO(image_data)) as img:
                 img = img.convert("RGB")
-                img.thumbnail((1000, 1000))
+                img.thumbnail((800, 800))
                 img.save(f, format="JPEG")
             temp_path = f.name
 
@@ -137,9 +169,6 @@ class HrPersonalCardExtract(models.Model):
 
             text = result.get("raw_text", "")
             thai_names = result.get("thai_fullname")
-
-            print("text = ", text)         
-            print("thai_names = ", thai_names)
 
             # ล้างข้อความให้เหลือเฉพาะตัวเลข
             digits_only = re.sub(r"[^0-9]", "", text)
