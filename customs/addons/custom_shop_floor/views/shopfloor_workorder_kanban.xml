@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_shopfloor_workorder_kanban" model="ir.ui.view">
+        <field name="name">shopfloor.workorder.kanban</field>
+        <field name="model">mrp.workorder</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="name"/>
+                <field name="state"/>
+                <field name="production_id"/>
+                <field name="product_id"/>
+
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_card">
+                            <strong>
+                                MO: <t t-esc="record.production_id.value"/>
+                            </strong>
+                            <div>Workorder: <t t-esc="record.name.value"/></div>
+                            <div>Product: <t t-esc="record.product_id.value"/></div>
+                            <div>Status: <t t-esc="record.state.value"/></div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+</odoo>

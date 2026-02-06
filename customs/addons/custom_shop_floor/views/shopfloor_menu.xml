@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Action -->
+   <record id="action_shopfloor_window" model="ir.actions.act_window">
+        <field name="name">Shopfloor</field>
+        <field name="res_model">mrp.workorder</field>
+        <field name="view_mode">kanban,form</field>
+        <field name="domain">
+            [('state', 'not in', ('done', 'cancel'))]
+        </field>
+    </record>
+    
+    <!-- App Menu -->
+    <menuitem
+        id="menu_shopfloor_root"
+        name="Shopfloor"
+        action="action_shopfloor_window"
+        sequence="10"/>
+</odoo>

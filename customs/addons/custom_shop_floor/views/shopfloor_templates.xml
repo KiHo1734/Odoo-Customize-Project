@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="shopfloor_screen">
+        <t t-call="web.layout">
+            <div class="shopfloor-fullscreen">
+                <h1>Shopfloor</h1>
+            </div>
+        </t>
+    </template>
+</odoo>

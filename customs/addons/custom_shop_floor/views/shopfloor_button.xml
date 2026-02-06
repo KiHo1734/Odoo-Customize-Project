@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_shopfloor_workorder_form_buttons" model="ir.ui.view">
+        <field name="name">shopfloor.workorder.form.buttons</field>
+        <field name="model">mrp.workorder</field>
+
+        <!-- ✅ ใช้ External ID จากรูป -->
+        <field name="inherit_id" ref="mrp.mrp_production_workorder_form_view_inherit"/>
+
+        <field name="arch" type="xml">
+            <xpath expr="//form/header" position="inside">
+
+                <button name="button_start"
+                        string="START"
+                        type="object"
+                        class="btn-primary"
+                        invisible="state != 'ready'"/>
+
+                <button name="button_pending"
+                        string="PAUSE"
+                        type="object"
+                        class="btn-warning"
+                        invisible="state != 'progress'"/>
+
+                <button name="button_finish"
+                        string="FINISH"
+                        type="object"
+                        class="btn-success"
+                        invisible="state != 'progress'"/>
+
+            </xpath>
+        </field>
+    </record>
+</odoo>

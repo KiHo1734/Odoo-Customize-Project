@@ -1,0 +1,11 @@
+.shopfloor-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    font-size: 22px;
+    background: #111;
+    color: #fff;
+}
+button {
+    font-size: 24px;
+    padding: 20px;
+}
