@@ -3,31 +3,47 @@
     <record id="view_shopfloor_workorder_form_buttons" model="ir.ui.view">
         <field name="name">shopfloor.workorder.form.buttons</field>
         <field name="model">mrp.workorder</field>
-
-        <!-- ✅ ใช้ External ID จากรูป -->
         <field name="inherit_id" ref="mrp.mrp_production_workorder_form_view_inherit"/>
-
         <field name="arch" type="xml">
             <xpath expr="//form/header" position="inside">
-
                 <button name="button_start"
                         string="START"
                         type="object"
                         class="btn-primary"
-                        invisible="state != 'ready'"/>
+                        modifiers="{'invisible': [['state', 'not in', ['ready','pending']]]}"
+                />
 
                 <button name="button_pending"
                         string="PAUSE"
                         type="object"
                         class="btn-warning"
-                        invisible="state != 'progress'"/>
+                        modifiers="{'invisible': [['state', '!=', 'progress']]}"
+                />
 
                 <button name="button_finish"
                         string="FINISH"
                         type="object"
                         class="btn-success"
-                        invisible="state != 'progress'"/>
+                        modifiers="{'invisible': [['state', '!=', 'progress']]}"
+                />
+            </xpath>
 
+            <xpath expr="//field[@name='time_ids']" position="replace">
+                <field name="time_ids" nolabel="1"
+                       context="{'default_workcenter_id': workcenter_id, 'default_workorder_id': id}">
+                    <list editable="bottom">
+                        <field name="user_id"/>
+                        <field name="duration"
+                               widget="float_time"
+                               sum="Total Time"
+                               readonly="id"/>
+                        <field name="date_start"/>
+                        <field name="date_end"/>
+                        <field name="workcenter_id" column_invisible="True"/>
+                        <field name="company_id" column_invisible="True"/>
+                        <field name="loss_id" string="Productivity" optional="show"/>
+                    </list>
+                </field>
             </xpath>
         </field>
     </record>

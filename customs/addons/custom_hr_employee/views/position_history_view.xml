@@ -1,30 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-  <!-- Kanban View with custom template -->
   <record id="custom_position_history_kanban" model="ir.ui.view">
     <field name="name">Position History Timeline</field>
     <field name="model">hr.position.history</field>
     <field name="arch" type="xml">
-      <kanban class="o_position_resume_view o_kanban_vertical" default_order="start_date desc, id desc" create="false">
+      <kanban class="o_position_resume_view o_kanban_vertical"
+              default_order="start_date desc, id desc"
+              create="false">
+
         <field name="job_id"/>
         <field name="start_date"/>
         <field name="end_date"/>
         <field name="department_id"/>
+
         <templates>
-          <!-- Template เมื่อไม่มีข้อมูล -->
+          <!-- Empty Template -->
           <t t-name="empty">
             <div class="alert alert-info text-center m-3">
               <div class="mb-2">
-                <i class="fa fa-info-circle fa-2x" t-att-title="_('None History')"/>
+                <i class="fa fa-info-circle fa-2x" title="None History"/>
               </div>
-              <h6 t-esc="_('ยังไม่มีประวัติการทำงาน')"/>
-              <small class="text-muted" t-esc="_('เพิ่มข้อมูลประวัติการทำงานของพนักงานท่านนี้')"/>
+              <h6>ยังไม่มีประวัติการทำงาน</h6>
+              <small class="text-muted">
+                เพิ่มข้อมูลประวัติการทำงานของพนักงานท่านนี้
+              </small>
             </div>
           </t>
-          
+
+          <!-- Card Template -->
           <t t-name="card">
             <div class="oe_kanban_card d-flex position-relative">
-              <!-- ปุ่มลบ -->
+
+              <!-- Delete Button -->
               <div class="position-absolute top-0 end-0">
                 <a type="delete"
                    class="btn btn-sm text-danger oe_kanban_action oe_kanban_action_delete"
@@ -33,42 +40,57 @@
                   <i class="fa fa-trash" title="Delete History"/>
                 </a>
               </div>
-              <!-- Dot + Line -->
-              <div class="timeline-dot-container" style="width: 16px;">
+
+              <!-- Timeline Dot -->
+              <div class="timeline-dot-container" style="width:16px;">
                 <div class="dot rounded-circle"></div>
               </div>
-              <!-- Main Content -->
+
+              <!-- Content -->
               <div class="ps-3">
-                <div class="text-muted fw-bold" style="font-size: 13px;">
-                  <t t-esc="record.start_date.value"/> – 
-                  <t t-if="record.end_date"><t t-esc="record.end_date.value"/></t>
-                  <t t-if="!record.end_date"><t t-esc="_('Current')"/></t>
+
+                <!-- Date Range -->
+                <div class="text-muted fw-bold" style="font-size:13px;">
+                  <t t-esc="record.start_date.value"/> –
+                  <t t-if="record.end_date.value">
+                    <t t-esc="record.end_date.value"/>
+                  </t>
+                  <t t-else="">
+                    Current
+                  </t>
                 </div>
-                
-                <!-- แสดง Job หรือข้อความแจ้งเตือน -->
-                <div class="fw-bold" style="font-size: 17px;">
+
+                <!-- Job -->
+                <div class="fw-bold" style="font-size:17px;">
                   <t t-if="record.job_id.value">
                     <t t-esc="record.job_id.value"/>
                   </t>
                   <t t-else="">
                     <span class="text-warning fst-italic">
-                      <i class="fa fa-exclamation-triangle me-1" t-att-title="_('None Positions')"/>
-                      <t t-esc="_('ไม่ได้ระบุตำแหน่งงาน')"/>
+                      <i class="fa fa-exclamation-triangle me-1"
+                         title="None Position"/>
+                      ไม่ได้ระบุตำแหน่งงาน
                     </span>
                   </t>
                 </div>
-                
-                <div class="text-muted" style="font-size: 14px;">
+
+                <!-- Department -->
+                <div class="text-muted" style="font-size:14px;">
                   <t t-if="record.department_id.value">
                     <t t-esc="record.department_id.value"/>
                   </t>
                   <t t-else="">
-                    <span class="text-muted fst-italic" t-esc="_('ไม่ได้ระบุแผนก')"/>
+                    <span class="text-muted fst-italic">
+                      ไม่ได้ระบุแผนก
+                    </span>
                   </t>
                 </div>
+
               </div>
+
             </div>
           </t>
+
         </templates>
       </kanban>
     </field>
