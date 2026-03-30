@@ -21,21 +21,33 @@ class HREmployee(models.Model):
     @api.model
     def create(self, vals):
         rec = super().create(vals)
-        if vals.get("image_1920"):
+
+        image = vals.get("image_1920")
+        if image not in [False, None, ""]:
             rec._compute_face_descriptor()
+
         return rec
 
     def write(self, vals):
+        image = vals.get("image_1920")
+        has_new_image = 'image_1920' in vals and image not in [False, None, ""]
+
         res = super().write(vals)
-        if vals.get("image_1920"):
+
+        if has_new_image:
             for rec in self:
                 rec._compute_face_descriptor()
+
         return res
     
     def _validate_face_image(self, image_data):
         """
         return (True, None) หรือ (False, error_message)
         """
+
+        if not image_data:
+            return True, None
+ 
         try:
             image = face_recognition.load_image_file(io.BytesIO(image_data))
         except Exception:
@@ -101,6 +113,10 @@ class HREmployee(models.Model):
 
             try:
                 image_data = base64.b64decode(rec.image_1920)
+
+                if not image_data or len(image_data) < 1000:
+                    rec.face_descriptor_json = False
+                    continue
 
                 is_valid, error = rec._validate_face_image(image_data)
                 if not is_valid:

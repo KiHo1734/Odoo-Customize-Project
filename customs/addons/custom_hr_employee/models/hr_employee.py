@@ -124,12 +124,29 @@ class HrEmployee(models.Model):
     
     # Selection สำหรับเลือกวิธีการเดินทาง
     travel_method = fields.Selection([
-        ('private_car', _('รถยนตร์ส่วนตัว')),
-        ('motorbike', _('รถจักรยานยนตร์')),
-        ('public_transport', _('รถสาธารณะ')),
-        ('bicycle', _('จักรยาน')),
-        ('walk', _('เดินเท้า')),
-    ], string=_('Travel Method'), default='private_car')
+        ('taxi', 'รถแท็กซี่'),
+        ('pickup_diesel', 'รถกระบะ (ดีเซล)'),
+        ('passenger_van', 'รถตู้โดยสาร'),
+        ('bts_mrt', 'รถไฟฟ้า BTS/MRT'),
+        ('public_bus', 'รถเมล์ / รถประจำทาง'),
+        ('suv_diesel', 'รถ SUV / PPV (ดีเซล)'),
+        ('car_phev', 'รถยนต์ปลั๊กอินไฮบริด (PHEV)'),
+        ('pickup_gasoline', 'รถกระบะ (เบนซิน)'),
+        ('motorcycle', 'รถจักรยานยนต์'),
+        ('car_diesel', 'รถยนต์นั่งส่วนบุคคล (ดีเซล)'),
+        ('car_e20', 'รถยนต์นั่งส่วนบุคคล (E20)'),
+        ('car_ev', 'รถยนต์ไฟฟ้า (EV)'),
+        ('motorcycle_ev', 'รถจักรยานยนต์ไฟฟ้า'),
+        ('car_gasoline', 'รถยนต์นั่งส่วนบุคคล (เบนซิน)'),
+        ('car_cng', 'รถยนต์นั่งส่วนบุคคล (CNG/NGV)'),
+        ('bus_aircon', 'รถเมล์ปรับอากาศ'),
+        ('car_lpg', 'รถยนต์นั่งส่วนบุคคล (LPG)'),
+        ('train', 'รถไฟ'),
+        ('car_hybrid', 'รถยนต์ไฮบริด (HEV)'),
+        ('suv_gasoline', 'รถ SUV / PPV (เบนซิน)'),
+        ('walking', 'เดินเท้า'),
+        ('bicycle', 'จักรยาน')
+    ], string='Travel Method', default=False)
 
     show_private_car_plate = fields.Boolean(
         string="Show Private Car Plate",

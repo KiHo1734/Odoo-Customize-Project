@@ -1,7 +1,7 @@
 import json
 from odoo import http
 from odoo.http import request
-from datetime import datetime
+from datetime import datetime, timedelta
 import base64
 import cv2
 import numpy as np
@@ -75,7 +75,28 @@ class HREmployeeAPI(http.Controller):
             return {'success': False, 'message': 'Employee not found'}
 
         Attendance = request.env['hr.attendance'].sudo()
+
+        # ตรวจการ Check IN/OUT ซ้ำภายใน 5 นาที
+        last_attendance = Attendance.search([
+            ('employee_id', '=', employee.id)
+        ], order="check_in desc", limit=1)
+
+        if last_attendance:
+            last_time = last_attendance.check_out or last_attendance.check_in
+            diff = now - last_time
+
+            if diff < timedelta(minutes=5):
+                remaining = timedelta(minutes=5) - diff
+                minutes = remaining.seconds // 60
+                seconds = remaining.seconds % 60
+
+                return request.make_json_response({
+                    'success': False,
+                    'message': f'You already scanned your face. Please wait {minutes} minutes {seconds} seconds before scanning again.',
+                    'action': 'already_scanned'
+                })
         
+                
         # หา attendance ล่าสุดของวันนี้
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_attendance = Attendance.search([

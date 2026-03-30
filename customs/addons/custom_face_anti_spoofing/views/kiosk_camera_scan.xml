@@ -65,7 +65,7 @@
                     background: rgba(0,0,0,0.8); z-index: 3000; display: none;
                     justify-content: center; align-items: center;">
             <div style="background: white; border-radius: 15px; padding: 30px; 
-                        max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                        max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative;">
                 
                 <!-- Employee Photo -->
                 <div id="employee_photo" style="margin-bottom: 20px;">
@@ -85,6 +85,31 @@
                 <div id="attendance_status" style="margin-bottom: 30px; padding: 15px; border-radius: 8px;">
                     <p style="margin: 0; font-size: 16px; font-weight: bold;">-</p>
                 </div>
+
+                <!-- Close Button -->
+                <button id="close_btn"
+                  style="
+                    position:absolute;
+                    top:10px;
+                    right:10px;
+                    width:36px;
+                    height:36px;
+                    border:none;
+                    border-radius:50%;
+                    background:rgba(0,0,0,0.08);
+                    font-size:20px;
+                    cursor:pointer;
+                    color:#555;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    transition:all 0.2s ease;
+                  "
+                  onmouseover="this.style.background='rgba(0,0,0,0.18)'"
+                  onmouseout="this.style.background='rgba(0,0,0,0.08)'"
+                >
+                  ×
+                </button>
                 
                 <!-- Buttons -->
                 <div>
@@ -115,6 +140,7 @@
           const popup = document.getElementById('attendance_popup');
           const confirmBtn = document.getElementById('confirm_btn');
           const retryBtn = document.getElementById('retry_btn');
+          const closeBtn = document.getElementById('close_btn');
 
           let intervalId = null;
           let stream = null;
@@ -129,6 +155,8 @@
           let mpCamera = null;
           let challengeIndex = 0;
           let mediaPipeActive = false;
+          let isSubmitting = false;
+          let currentRequestId = 0;
 
           const challenges = [
             { type: 'blink', text: 'Please blink your eyes' },
@@ -190,6 +218,7 @@
           }
 
           async function processAttendance(employee) {
+            const requestId = ++currentRequestId;
             try {
               showStatus('Processing attendance...');
 
@@ -206,38 +235,56 @@
               });
 
               const data = await res.json();
+
+              // ถ้าไม่ใช่ request ล่าสุด → ทิ้งทันที
+              if (requestId !== currentRequestId) {
+                console.log("IGNORE OLD RESPONSE");
+                return;
+              }
               console.log("Attendance API response:", data);
 
               const result = data.result || data;
+              const success = result.success;
+              const message = result.message || (success 
+                ? 'Attendance recorded successfully!' 
+                : 'Failed to record attendance');
 
-              // แสกนหน้าแล้ว Liveness fail → ให้สแกนหน้าใหม่
+              // handle already_scanned ก่อน
+              if (result.action === "already_scanned") {
+                popup.style.display = 'none';
+                showDuplicatePopup(result.message);
+                return;
+              }
+
+              // handle fail อื่น ๆ
               if (!result.success) {
-                popup.style.display = 'none';    
-                showStatus('Liveness check failed. Please scan your face again.');
-                return; 
+                popup.style.display = 'none';
+                showStatus(result.message || 'Liveness check failed. Please scan again.');
+                return;
               }
 
-              const success = data.result && data.result.success;
-              const message = data.result?.message || (success ? 'Attendance recorded successfully!' : 'Failed to record attendance');
-
-              // แสดง popup สรุป
+              // success เท่านั้นถึงมาถึงตรงนี้
               const statusDiv = document.getElementById('attendance_status');
-              if (success) {
-                document.getElementById('action_type').style.color = '#28a745';
-                statusDiv.style.backgroundColor = '#d4edda';
-                statusDiv.style.color = '#155724';
-              } else {
-                document.getElementById('action_type').style.color = '#dc3545';
-                statusDiv.style.backgroundColor = '#f8d7da';
-                statusDiv.style.color = '#721c24';
-              }
-              statusDiv.innerHTML = `<p style="margin:0;font-size:16px;font-weight:bold;">${message}</p>`;
+
+              document.getElementById('action_type').style.color = '#28a745';
+              statusDiv.style.backgroundColor = '#d4edda';
+              statusDiv.style.color = '#155724';
+
+              statusDiv.innerHTML = `
+                <p style="margin:0;font-size:16px;font-weight:bold;">
+                  ${result.message}
+                </p>
+              `;
+
               popup.style.display = 'flex';
               hideStatus();
 
             } catch (err) {
               console.error("Attendance API error:", err);
               showStatus('Connection error. Please try again.');
+            } finally {
+              isSubmitting = false;
+              confirmBtn.disabled = false;
             }
           }
 
@@ -297,6 +344,7 @@
                 ctx.fillStyle = 'lime';
                 ctx.fillText('Challenge Passed', 20, 80);
 
+                document.getElementById('challenge_text').style.display = 'none';
                 clearOverlay();      // ✅ ลบกรอบ / mesh
                 stopMediaPipe();     // ✅ ปิด MediaPipe
              
@@ -328,6 +376,7 @@
           };
 
           function initMediaPipeChallenge() {
+            document.getElementById('challenge_text').style.display = 'block';
             mediaPipeActive = true;
             challengePassed = false;
             challengeIndex = 0;
@@ -484,15 +533,22 @@
           };
 
           confirmBtn.onclick = async () => {
+            if (isSubmitting) return;
+
             if (matchedEmployee) {
+              isSubmitting = true;
+              confirmBtn.disabled = true; 
               await processAttendance(matchedEmployee);
             }
-            resetAllState();
           };
 
           retryBtn.onclick = () => {
             resetAllState();
             startBtn.click();
+          };
+
+          closeBtn.onclick = () => {
+            resetAllState();
           };
 
           function captureCurrentFrame() {
@@ -543,6 +599,9 @@
           mediaPipeActive = false;
           challengePassed = false;
           challengeIndex = 0;
+
+          document.getElementById('challenge_text').style.display = 'none';
+          document.getElementById('challenge_text').innerText = "";
 
           matchedEmployee = null;
           capturedImage = null;
@@ -595,6 +654,26 @@
         function clearOverlay() {
           const ctx = canvas.getContext('2d');
           ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function showDuplicatePopup(message){
+          const statusDiv = document.getElementById('attendance_status');
+
+          document.getElementById('employee_name').textContent = matchedEmployee?.name || "-";
+          document.getElementById('action_type').textContent = "ALREADY SCANNED";
+
+          statusDiv.style.backgroundColor = "#fff3cd";
+          statusDiv.style.color = "#856404";
+          statusDiv.style.border = "1px solid #ffeeba";
+
+          statusDiv.innerHTML = `
+            <p style="margin:0;font-size:16px;font-weight:bold;">
+              ${message}
+            </p>
+          `;
+
+          popup.style.display = "flex";
+          hideStatus();
         }
         });
       ]]>
