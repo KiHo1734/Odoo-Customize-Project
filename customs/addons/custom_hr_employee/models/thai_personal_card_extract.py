@@ -101,7 +101,7 @@ class HrPersonalCardExtract(models.Model):
     @staticmethod   
     def scan_id_card(image_path):
         text_md = ocr_document(
-            image_path,  base_url="http://localhost:11434/v1",
+            image_path,  base_url="http://ollama:11434",
             model="scb10x/typhoon-ocr1.5-3b",
             page_num=1
         )

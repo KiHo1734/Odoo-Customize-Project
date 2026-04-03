@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:15
+    container_name: odoo-db
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+
+  odoo:
+    build: .
+    container_name: odoo-web
+    depends_on:
+      - db
+      - ollama
+    ports:
+      - "8069:8069"
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - ./addons:/mnt/extra-addons
+      - ./customs/addons:/mnt/customs/addons
+      - ./odoo.conf:/etc/odoo/odoo.conf
+    command: >
+      /opt/venv/bin/python /usr/bin/odoo
+      --addons-path=/mnt/extra-addons,/mnt/customs/addons,/usr/lib/python3/dist-packages/odoo/addons
+      -c /etc/odoo/odoo.conf
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+volumes:
+  ollama-data:

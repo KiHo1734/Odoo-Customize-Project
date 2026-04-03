@@ -25,7 +25,7 @@
         This module integrates mediapie and silent face spoofing for real-time face detection and recognition in kiosk-style attendance.
 
         Assets and resources:
-        - Silent-Face-Anti-Spoofing library is loaded from `customs\addons\custom_face_anti_spoofing\static\lib\Silent-Face-Anti-Spoofing-master`.
+        - Silent-Face-Anti-Spoofing library is loaded from `customs/addons/custom_face_anti_spoofing/static/lib/Silent-Face-Anti-Spoofing-master`.
 
         Development and reference:
         - Silent-Face-Anti-Spoofing repository: https://github.com/minivision-ai/Silent-Face-Anti-Spoofing :contentReference[oaicite:0]{index=0}
