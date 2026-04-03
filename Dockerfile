@@ -26,9 +26,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 # upgrade pip
 RUN pip install --no-cache-dir --upgrade pip
 
-# ⚡ ลดขนาด: ใช้ CPU torch
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
-
 # install python packages
 RUN pip install --no-cache-dir \
     typhoon-ocr \
