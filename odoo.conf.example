@@ -1,19 +1,19 @@
 [options]
-addons_path = d:\code\odoo-project\server\odoo\odoo\addons,d:\code\odoo-project\server\odoo\addons,d:\code\odoo-project\server\custom\addons
+addons_path = d:\Odoo-Customize-Project\addons, d:\Odoo-Customize-Project\customs\addons
 admin_passwd = admin
 csv_internal_sep = ,
 data_dir = c:\users\acer\appdata\local\openerp s.a\odoo
-db_host = localhost
+db_host = False
 db_maxconn = 64
 db_maxconn_gevent = False
-db_name = False
-db_password = False
-db_port = 5432
+db_name = my_odoo_db
+db_password = 521290
+db_port = False
 db_replica_host = False
 db_replica_port = False
 db_sslmode = prefer
 db_template = template0
-db_user = False
+db_user = odooadmin
 dbfilter = 
 email_from = False
 from_filter = False
@@ -68,6 +68,7 @@ websocket_keep_alive_timeout = 3600
 websocket_rate_limit_burst = 10
 websocket_rate_limit_delay = 0.2
 without_demo = False
+wkhtmltopdf = C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe
 workers = None
 x_sendfile = False
-cors = True
+
